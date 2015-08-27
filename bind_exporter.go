@@ -208,12 +208,12 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 
 	// Incoming Queries
 	for _, stat := range serverNode.Requests.Opcode {
-		e.counterVecs["incoming_requests"].WithLabelValues(stat.Name).Set(float64(stat.Counter))
+		e.counterVecs["incoming_requests_total"].WithLabelValues(stat.Name).Set(float64(stat.Counter))
 	}
 
 	// Incoming requests
 	for _, stat := range serverNode.QueriesIn.Rdtype {
-		e.counterVecs["incoming_queries"].WithLabelValues(stat.Name).Set(float64(stat.Counter))
+		e.counterVecs["incoming_queries_total"].WithLabelValues(stat.Name).Set(float64(stat.Counter))
 	}
 
 	// Report metrics.
