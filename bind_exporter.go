@@ -35,11 +35,11 @@ var (
 	//		"example":    "example help text",
 	}
 	counterVecMetrics = map[string]*VecInfo{
-		"incoming_requests": &VecInfo{
+		"incoming_requests": {
 			help:   "number of inbound requests made",
 			labels: []string{"name"},
 		},
-		"incoming_queries": &VecInfo{
+		"incoming_queries": {
 			help:   "number of inbound queries made",
 			labels: []string{"name"},
 		},
@@ -208,12 +208,18 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 
 	// Incoming Queries
 	for _, stat := range serverNode.Requests.Opcode {
-		e.counterVecs["incoming_requests_total"].WithLabelValues(stat.Name).Set(float64(stat.Counter))
+		c := e.counterVecs["incoming_requests_total"]
+		if c != nil {
+			c.WithLabelValues(stat.Name).Set(float64(stat.Counter))
+		}
 	}
 
 	// Incoming requests
 	for _, stat := range serverNode.QueriesIn.Rdtype {
-		e.counterVecs["incoming_queries_total"].WithLabelValues(stat.Name).Set(float64(stat.Counter))
+		c := e.counterVecs["incoming_queries_total"]
+		if c != nil {
+			c.WithLabelValues(stat.Name).Set(float64(stat.Counter))
+		}
 	}
 
 	// Report metrics.
