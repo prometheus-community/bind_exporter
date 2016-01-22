@@ -3,10 +3,13 @@ package main
 import (
 	"encoding/xml"
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"net"
 	"net/http"
 	_ "net/http/pprof"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -119,10 +122,26 @@ func main() {
 		metricsPath   = flag.String("web.telemetry-path", "/metrics", "Path under which to expose metrics.")
 		bindURI       = flag.String("bind.statsuri", "http://localhost:8053/", "HTTP XML API address of an Bind server.")
 		bindTimeout   = flag.Duration("bind.timeout", 10*time.Second, "Timeout for trying to get stats from Bind.")
+		bindPidFile   = flag.String("bind.pid-file", "", "Path to Bind's pid file to export process information.")
 	)
 	flag.Parse()
 
 	prometheus.MustRegister(NewExporter(*bindURI, *bindTimeout))
+	if *bindPidFile != "" {
+		procExporter := prometheus.NewProcessCollectorPIDFn(
+			func() (int, error) {
+				content, err := ioutil.ReadFile(*bindPidFile)
+				if err != nil {
+					return 0, fmt.Errorf("Can't read pid file: %s", err)
+				}
+				value, err := strconv.Atoi(strings.TrimSpace(string(content)))
+				if err != nil {
+					return 0, fmt.Errorf("Can't parse pid file: %s", err)
+				}
+				return value, nil
+			}, namespace)
+		prometheus.MustRegister(procExporter)
+	}
 
 	log.Info("Starting Server: ", *listenAddress)
 	http.Handle(*metricsPath, prometheus.Handler())
