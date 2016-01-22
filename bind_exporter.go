@@ -3,19 +3,15 @@ package main
 import (
 	"encoding/xml"
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"net"
 	"net/http"
 	_ "net/http/pprof"
-	"os"
 	"sync"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
-	logrus_syslog "github.com/Sirupsen/logrus/hooks/syslog"
 	"github.com/prometheus/client_golang/prometheus"
-	"log/syslog"
+	"github.com/prometheus/common/log"
 )
 
 const (
@@ -28,12 +24,8 @@ type VecInfo struct {
 }
 
 var (
-	gaugeMetrics = map[string]string{
-	//		"example":    "example help text",
-	}
-	counterMetrics = map[string]string{
-	//		"example":    "example help text",
-	}
+	gaugeMetrics      = map[string]string{}
+	counterMetrics    = map[string]string{}
 	counterVecMetrics = map[string]*VecInfo{
 		"incoming_requests": {
 			help:   "number of inbound requests made",
@@ -45,14 +37,7 @@ var (
 		},
 	}
 
-	gaugeVecMetrics = map[string]*VecInfo{
-	/*
-		"example_metric": &VecInfo{
-			help:   "help_text",
-			labels: []string{"extra label"},
-		},
-	*/
-	}
+	gaugeVecMetrics = map[string]*VecInfo{}
 )
 
 // Exporter collects Binds stats from the given server and exports
@@ -182,14 +167,14 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	resp, err := e.client.Get(e.URI)
 	if err != nil {
 		e.up.Set(0)
-		log.Println("Error while querying Bind:", err)
+		log.Error("Error while querying Bind:", err)
 		return
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Println("Failed to read Bind xml response body:", err)
+		log.Error("Failed to read Bind xml response body:", err)
 		e.up.Set(0)
 		return
 	}
@@ -198,7 +183,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 
 	err = xml.Unmarshal([]byte(body), &root)
 	if err != nil {
-		fmt.Printf("error: %v", err)
+		log.Error(err)
 		return
 	}
 
@@ -243,26 +228,6 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 
 }
 
-func initLogging() {
-	// Log as JSON instead of the default ASCII formatter.
-	log.SetFormatter(&log.JSONFormatter{})
-
-	// Output to stderr instead of stdout, could also be a file.
-	log.SetOutput(os.Stdout)
-
-	// Only log the warning severity or above.
-	//log.SetLevel(log.InfoLevel)
-
-	//Also log to syslog
-	hook, err := logrus_syslog.NewSyslogHook("udp", "localhost:514", syslog.LOG_INFO, "")
-	if err != nil {
-		log.Error("Unable to connect to local syslog daemon")
-	} else {
-		log.AddHook(hook)
-	}
-
-}
-
 func main() {
 	var (
 		listenAddress = flag.String("web.listen-address", ":9109", "Address to listen on for web interface and telemetry.")
@@ -272,12 +237,10 @@ func main() {
 	)
 	flag.Parse()
 
-	initLogging()
-
 	exporter := NewExporter(*bindURI, *bindTimeout)
 	prometheus.MustRegister(exporter)
 
-	log.Println("Starting Server:", *listenAddress)
+	log.Info("Starting Server:", *listenAddress)
 	http.Handle(*metricsPath, prometheus.Handler())
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`<html>
