@@ -36,6 +36,11 @@ var (
 		"Number of incomming DNS queries.",
 		[]string{"name"}, nil,
 	)
+	resolverQueries = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "resolver_queries_total"),
+		"Number of outgoing DNS queries.",
+		[]string{"view", "name"}, nil,
+	)
 )
 
 // Exporter collects Binds stats from the given server and exports
@@ -72,6 +77,7 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- up
 	ch <- incomingQueries
 	ch <- incomingRequests
+	ch <- resolverQueries
 }
 
 // Collect fetches the stats from configured bind location and
@@ -113,6 +119,14 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 		ch <- prometheus.MustNewConstMetric(
 			incomingRequests, prometheus.CounterValue, float64(s.Counter), s.Name,
 		)
+	}
+
+	for _, v := range root.Bind.Statistics.Views {
+		for _, s := range v.Rdtype {
+			ch <- prometheus.MustNewConstMetric(
+				resolverQueries, prometheus.CounterValue, float64(s.Counter), v.Name, s.Name,
+			)
+		}
 	}
 }
 
