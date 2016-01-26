@@ -106,6 +106,16 @@ var (
 		"ValOk":         resolverDNSSECSucess,
 		"ValNegOk":      resolverDNSSECSucess,
 	}
+	tasksRunning = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "tasks_running"),
+		"Number of running tasks.",
+		nil, nil,
+	)
+	workerThreads = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "worker_threads"),
+		"Total number of available worker threads.",
+		nil, nil,
+	)
 )
 
 // Exporter collects Binds stats from the given server and exports
@@ -150,6 +160,8 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	for _, desc := range resolverMetricStats {
 		ch <- desc
 	}
+	ch <- tasksRunning
+	ch <- workerThreads
 }
 
 // Collect fetches the stats from configured bind location and
@@ -181,19 +193,19 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 		return
 	}
 
-	serverNode := root.Bind.Statistics.Server
-	for _, s := range serverNode.QueriesIn.Rdtype {
+	stats := root.Bind.Statistics
+	for _, s := range stats.Server.QueriesIn.Rdtype {
 		ch <- prometheus.MustNewConstMetric(
 			incomingQueries, prometheus.CounterValue, float64(s.Counter), s.Name,
 		)
 	}
-	for _, s := range serverNode.Requests.Opcode {
+	for _, s := range stats.Server.Requests.Opcode {
 		ch <- prometheus.MustNewConstMetric(
 			incomingRequests, prometheus.CounterValue, float64(s.Counter), s.Name,
 		)
 	}
 
-	for _, v := range root.Bind.Statistics.Views {
+	for _, v := range stats.Views {
 		for _, s := range v.Rdtype {
 			ch <- prometheus.MustNewConstMetric(
 				resolverQueries, prometheus.CounterValue, float64(s.Counter), v.Name, s.Name,
@@ -221,6 +233,14 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 			log.Warn("Error parsing RTT:", err)
 		}
 	}
+	threadModel := stats.Taskmgr.ThreadModel
+	ch <- prometheus.MustNewConstMetric(
+		tasksRunning, prometheus.GaugeValue, float64(threadModel.TasksRunning),
+	)
+	ch <- prometheus.MustNewConstMetric(
+		workerThreads, prometheus.GaugeValue, float64(threadModel.WorkerThreads),
+	)
+
 }
 
 func histogram(stats []Stat) (map[float64]uint64, uint64, error) {

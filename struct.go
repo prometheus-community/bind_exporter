@@ -30,18 +30,34 @@ type View struct {
 
 //TODO expand
 type Socket struct {
-	Id           string `xml:"id"`
+	ID           string `xml:"id"`
 	Name         string `xml:"name"`
 	LocalAddress string `xml:"local-address"`
+	References   uint   `xml:"references"`
 }
 
 type Socketmgr struct {
-	References int      `xml:"references"`
-	Sockets    []Socket `xml:"sockets>socket"`
+	Sockets []Socket `xml:"sockets>socket"`
+}
+
+type Task struct {
+	ID         string `xml:"id"`
+	Name       string `xml:"name"`
+	Quantum    uint   `xml:"quantum"`
+	References uint   `xml:"references"`
+	State      string `xml:"state"`
+}
+
+type ThreadModel struct {
+	Type           string `xml:"type"`
+	WorkerThreads  uint   `xml:"worker-threads"`
+	DefaultQuantum uint   `xml:"default-quantum"`
+	TasksRunning   uint   `xml:"tasks-running"`
 }
 
 type Taskmgr struct {
-	//TODO
+	Tasks       []Task      `xml:"tasks>task"`
+	ThreadModel ThreadModel `xml:"thread-model"`
 }
 
 type QueriesIn struct {
