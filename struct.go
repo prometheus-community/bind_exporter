@@ -18,14 +18,15 @@ type Zone struct {
 
 type Stat struct {
 	Name    string `xml:"name"`
-	Counter int    `xml:"counter"`
+	Counter uint   `xml:"counter"`
 }
 
 type View struct {
 	Name    string `xml:"name"`
-	Zones   []Zone `xml:"zones>zone"`
-	Resstat []Stat `xml:"resstat"`
+	Cache   []Stat `xml:"cache>rrset"`
 	Rdtype  []Stat `xml:"rdtype"`
+	Resstat []Stat `xml:"resstat"`
+	Zones   []Zone `xml:"zones>zone"`
 }
 
 //TODO expand

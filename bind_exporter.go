@@ -31,12 +31,17 @@ var (
 	incomingQueries = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "incoming_queries_total"),
 		"Number of incomming DNS queries.",
-		[]string{"name"}, nil,
+		[]string{"type"}, nil,
 	)
 	incomingRequests = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "incoming_requests_total"),
 		"Number of incomming DNS queries.",
 		[]string{"name"}, nil,
+	)
+	resolverCache = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, resolver, "cache_rrsets"),
+		"Number of RRSets in Cache database.",
+		[]string{"view", "type"}, nil,
 	)
 	resolverQueries = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, resolver, "queries_total"),
@@ -206,6 +211,12 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	}
 
 	for _, v := range stats.Views {
+		for _, s := range v.Cache {
+			ch <- prometheus.MustNewConstMetric(
+				resolverCache, prometheus.GaugeValue, float64(s.Counter), v.Name, s.Name,
+			)
+		}
+
 		for _, s := range v.Rdtype {
 			ch <- prometheus.MustNewConstMetric(
 				resolverQueries, prometheus.CounterValue, float64(s.Counter), v.Name, s.Name,
