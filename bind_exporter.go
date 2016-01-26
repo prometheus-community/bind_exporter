@@ -111,18 +111,26 @@ var (
 		"ValOk":         resolverDNSSECSucess,
 		"ValNegOk":      resolverDNSSECSucess,
 	}
+	serverQueryErrors = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "query_errors_total"),
+		"Number of query failures.",
+		[]string{"error"}, nil,
+	)
 	serverReponses = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "responses_total"),
 		"Number of responses sent.",
 		[]string{"result"}, nil,
 	)
 	serverLabelStats = map[string]*prometheus.Desc{
-		"QrySuccess":  serverReponses,
-		"QryReferral": serverReponses,
-		"QryNxrrset":  serverReponses,
-		"QrySERVFAIL": serverReponses,
-		"QryFORMERR":  serverReponses,
-		"QryNXDOMAIN": serverReponses,
+		"QryDuplicate": serverQueryErrors,
+		"QryDropped":   serverQueryErrors,
+		"QryFailure":   serverQueryErrors,
+		"QrySuccess":   serverReponses,
+		"QryReferral":  serverReponses,
+		"QryNxrrset":   serverReponses,
+		"QrySERVFAIL":  serverReponses,
+		"QryFORMERR":   serverReponses,
+		"QryNXDOMAIN":  serverReponses,
 	}
 	tasksRunning = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "tasks_running"),
