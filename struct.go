@@ -4,6 +4,10 @@ import (
 	"encoding/xml"
 )
 
+const (
+	qryRTT = "QryRTT"
+)
+
 type Zone struct {
 	Name       string `xml:"name"`
 	Rdataclass string `xml:"rdataclass"`

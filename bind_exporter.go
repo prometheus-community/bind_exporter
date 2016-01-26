@@ -5,126 +5,120 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"net"
 	"net/http"
 	_ "net/http/pprof"
-	"os"
-	"sync"
+	"strconv"
+	"strings"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
-	logrus_syslog "github.com/Sirupsen/logrus/hooks/syslog"
 	"github.com/prometheus/client_golang/prometheus"
-	"log/syslog"
+	"github.com/prometheus/common/log"
 )
 
 const (
 	namespace = "bind"
+	resolver  = "resolver"
 )
 
-type VecInfo struct {
-	help   string
-	labels []string
-}
-
 var (
-	gaugeMetrics = map[string]string{
-	//		"example":    "example help text",
+	up = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "up"),
+		"Was the Bind instance query successful?",
+		nil, nil,
+	)
+	incomingQueries = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "incoming_queries_total"),
+		"Number of incomming DNS queries.",
+		[]string{"name"}, nil,
+	)
+	incomingRequests = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "incoming_requests_total"),
+		"Number of incomming DNS queries.",
+		[]string{"name"}, nil,
+	)
+	resolverQueries = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, resolver, "queries_total"),
+		"Number of outgoing DNS queries.",
+		[]string{"view", "name"}, nil,
+	)
+	resolverQueryDuration = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, resolver, "query_duration_seconds"),
+		"Resolver query round-trip time in seconds.",
+		[]string{"view"}, nil,
+	)
+	resolverQueryErrors = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, resolver, "query_errors_total"),
+		"Number of resolver queries failed.",
+		[]string{"view", "error"}, nil,
+	)
+	resolverResponseErrors = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, resolver, "response_errors_total"),
+		"Number of resolver reponse errors received.",
+		[]string{"view", "error"}, nil,
+	)
+	resolverDNSSECSucess = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, resolver, "dnssec_validation_success_total"),
+		"Number of DNSSEC validation attempts succeeded.",
+		[]string{"view", "result"}, nil,
+	)
+	resolverMetricStats = map[string]*prometheus.Desc{
+		"Lame": prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, resolver, "response_lame_total"),
+			"Number of lame delegation responses received.",
+			[]string{"view"}, nil,
+		),
+		"EDNS0Fail": prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, resolver, "query_edns0_errors_total"),
+			"Number of EDNS(0) query errors.",
+			[]string{"view"}, nil,
+		),
+		"Mismatch": prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, resolver, "response_mismatch_total"),
+			"Number of mismatch responses received.",
+			[]string{"view"}, nil,
+		),
+		"Retry": prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, resolver, "query_retries_total"),
+			"Number of resolver query retries.",
+			[]string{"view"}, nil,
+		),
+		"Truncated": prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, resolver, "response_truncated_total"),
+			"Number of truncated responses received.",
+			[]string{"view"}, nil,
+		),
+		"ValFail": prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, resolver, "dnssec_validation_errors_total"),
+			"Number of DNSSEC validation attempt errors.",
+			[]string{"view"}, nil,
+		),
 	}
-	counterMetrics = map[string]string{
-	//		"example":    "example help text",
-	}
-	counterVecMetrics = map[string]*VecInfo{
-		"incoming_requests": {
-			help:   "number of inbound requests made",
-			labels: []string{"name"},
-		},
-		"incoming_queries": {
-			help:   "number of inbound queries made",
-			labels: []string{"name"},
-		},
-	}
-
-	gaugeVecMetrics = map[string]*VecInfo{
-	/*
-		"example_metric": &VecInfo{
-			help:   "help_text",
-			labels: []string{"extra label"},
-		},
-	*/
+	resolverLabelStats = map[string]*prometheus.Desc{
+		"QueryAbort":    resolverQueryErrors,
+		"QuerySockFail": resolverQueryErrors,
+		"QueryTimeout":  resolverQueryErrors,
+		"NXDOMAIN":      resolverResponseErrors,
+		"SERVFAIL":      resolverResponseErrors,
+		"FORMERR":       resolverResponseErrors,
+		"OtherError":    resolverResponseErrors,
+		"ValOk":         resolverDNSSECSucess,
+		"ValNegOk":      resolverDNSSECSucess,
 	}
 )
 
 // Exporter collects Binds stats from the given server and exports
 // them using the prometheus metrics package.
 type Exporter struct {
-	URI   string
-	mutex sync.RWMutex
-
-	up prometheus.Gauge
-
-	gauges      map[string]*prometheus.GaugeVec
-	gaugeVecs   map[string]*prometheus.GaugeVec
-	counters    map[string]*prometheus.CounterVec
-	counterVecs map[string]*prometheus.CounterVec
-
+	URI    string
 	client *http.Client
 }
 
 // NewExporter returns an initialized Exporter.
 func NewExporter(uri string, timeout time.Duration) *Exporter {
-	counters := make(map[string]*prometheus.CounterVec, len(counterMetrics))
-	counterVecs := make(map[string]*prometheus.CounterVec, len(counterVecMetrics))
-	gauges := make(map[string]*prometheus.GaugeVec, len(gaugeMetrics))
-	gaugeVecs := make(map[string]*prometheus.GaugeVec, len(gaugeVecMetrics))
-
-	for name, info := range counterVecMetrics {
-		counterVecs[name] = prometheus.NewCounterVec(prometheus.CounterOpts{
-			Namespace: namespace,
-			Name:      name,
-			Help:      info.help,
-		}, info.labels)
-	}
-
-	for name, info := range gaugeVecMetrics {
-		gaugeVecs[name] = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Name:      name,
-			Help:      info.help,
-		}, info.labels)
-	}
-
-	for name, help := range counterMetrics {
-		counters[name] = prometheus.NewCounterVec(prometheus.CounterOpts{
-			Namespace: namespace,
-			Name:      name,
-			Help:      help,
-		}, []string{})
-	}
-
-	for name, help := range gaugeMetrics {
-		gauges[name] = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Name:      name,
-			Help:      help,
-		}, []string{})
-	}
-
-	// Init our exporter.
 	return &Exporter{
 		URI: uri,
-
-		up: prometheus.NewGauge(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Name:      "up",
-			Help:      "Was the Bind instance query successful?",
-		}),
-
-		counters:    counters,
-		counterVecs: counterVecs,
-		gauges:      gauges,
-		gaugeVecs:   gaugeVecs,
-
 		client: &http.Client{
 			Transport: &http.Transport{
 				Dial: func(netw, addr string) (net.Conn, error) {
@@ -145,122 +139,111 @@ func NewExporter(uri string, timeout time.Duration) *Exporter {
 // Describe describes all the metrics ever exported by the bind
 // exporter. It implements prometheus.Collector.
 func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
-	ch <- e.up.Desc()
-
-	for _, vec := range e.counters {
-		vec.Describe(ch)
-	}
-
-	for _, vec := range e.gauges {
-		vec.Describe(ch)
+	ch <- up
+	ch <- incomingQueries
+	ch <- incomingRequests
+	ch <- resolverDNSSECSucess
+	ch <- resolverQueries
+	ch <- resolverQueryDuration
+	ch <- resolverQueryErrors
+	ch <- resolverResponseErrors
+	for _, desc := range resolverMetricStats {
+		ch <- desc
 	}
 }
 
 // Collect fetches the stats from configured bind location and
 // delivers them as Prometheus metrics. It implements prometheus.Collector.
 func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
-	e.mutex.Lock() // To protect metrics from concurrent collects.
-	defer e.mutex.Unlock()
-
-	// Reset metrics.
-	for _, vec := range e.gauges {
-		vec.Reset()
-	}
-
-	for _, vec := range e.counters {
-		vec.Reset()
-	}
-
-	for _, vec := range e.gaugeVecs {
-		vec.Reset()
-	}
-
-	for _, vec := range e.counterVecs {
-		vec.Reset()
-	}
+	var status float64
+	defer func() {
+		ch <- prometheus.MustNewConstMetric(up, prometheus.GaugeValue, status)
+	}()
 
 	resp, err := e.client.Get(e.URI)
 	if err != nil {
-		e.up.Set(0)
-		log.Println("Error while querying Bind:", err)
+		log.Error("Error while querying Bind: ", err)
 		return
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Println("Failed to read Bind xml response body:", err)
-		e.up.Set(0)
+		log.Error("Failed to read XML response body: ", err)
 		return
 	}
+
+	status = 1
 
 	root := Isc{}
-
-	err = xml.Unmarshal([]byte(body), &root)
-	if err != nil {
-		fmt.Printf("error: %v", err)
+	if err := xml.Unmarshal([]byte(body), &root); err != nil {
+		log.Error("Failed to unmarshal XML response: ", err)
 		return
 	}
 
-	e.up.Set(1)
-
 	serverNode := root.Bind.Statistics.Server
+	for _, s := range serverNode.QueriesIn.Rdtype {
+		ch <- prometheus.MustNewConstMetric(
+			incomingQueries, prometheus.CounterValue, float64(s.Counter), s.Name,
+		)
+	}
+	for _, s := range serverNode.Requests.Opcode {
+		ch <- prometheus.MustNewConstMetric(
+			incomingRequests, prometheus.CounterValue, float64(s.Counter), s.Name,
+		)
+	}
 
-	// Incoming Queries
-	for _, stat := range serverNode.Requests.Opcode {
-		c := e.counterVecs["incoming_requests_total"]
-		if c != nil {
-			c.WithLabelValues(stat.Name).Set(float64(stat.Counter))
+	for _, v := range root.Bind.Statistics.Views {
+		for _, s := range v.Rdtype {
+			ch <- prometheus.MustNewConstMetric(
+				resolverQueries, prometheus.CounterValue, float64(s.Counter), v.Name, s.Name,
+			)
+		}
+
+		for _, s := range v.Resstat {
+			if desc, ok := resolverMetricStats[s.Name]; ok {
+				ch <- prometheus.MustNewConstMetric(
+					desc, prometheus.CounterValue, float64(s.Counter), v.Name,
+				)
+			}
+			if desc, ok := resolverLabelStats[s.Name]; ok {
+				ch <- prometheus.MustNewConstMetric(
+					desc, prometheus.CounterValue, float64(s.Counter), v.Name, s.Name,
+				)
+			}
+		}
+
+		if buckets, count, err := histogram(v.Resstat); err == nil {
+			ch <- prometheus.MustNewConstHistogram(
+				resolverQueryDuration, count, math.NaN(), buckets, v.Name,
+			)
+		} else {
+			log.Warn("Error parsing RTT:", err)
 		}
 	}
-
-	// Incoming requests
-	for _, stat := range serverNode.QueriesIn.Rdtype {
-		c := e.counterVecs["incoming_queries_total"]
-		if c != nil {
-			c.WithLabelValues(stat.Name).Set(float64(stat.Counter))
-		}
-	}
-
-	// Report metrics.
-	ch <- e.up
-
-	for _, vec := range e.counterVecs {
-		vec.Collect(ch)
-	}
-
-	for _, vec := range e.gaugeVecs {
-		vec.Collect(ch)
-	}
-
-	for _, vec := range e.counters {
-		vec.Collect(ch)
-	}
-
-	for _, vec := range e.gauges {
-		vec.Collect(ch)
-	}
-
 }
 
-func initLogging() {
-	// Log as JSON instead of the default ASCII formatter.
-	log.SetFormatter(&log.JSONFormatter{})
+func histogram(stats []Stat) (map[float64]uint64, uint64, error) {
+	buckets := map[float64]uint64{}
+	var count uint64
 
-	// Output to stderr instead of stdout, could also be a file.
-	log.SetOutput(os.Stdout)
+	for _, s := range stats {
+		if strings.HasPrefix(s.Name, qryRTT) {
+			b := math.Inf(0)
+			if !strings.HasSuffix(s.Name, "+") {
+				var err error
+				rrt := strings.TrimPrefix(s.Name, qryRTT)
+				b, err = strconv.ParseFloat(rrt, 32)
+				if err != nil {
+					return buckets, 0, fmt.Errorf("could not parse RTT: %s", rrt)
+				}
+			}
 
-	// Only log the warning severity or above.
-	//log.SetLevel(log.InfoLevel)
-
-	//Also log to syslog
-	hook, err := logrus_syslog.NewSyslogHook("udp", "localhost:514", syslog.LOG_INFO, "")
-	if err != nil {
-		log.Error("Unable to connect to local syslog daemon")
-	} else {
-		log.AddHook(hook)
+			buckets[b/1000] = count + uint64(s.Counter)
+			count += uint64(s.Counter)
+		}
 	}
-
+	return buckets, count, nil
 }
 
 func main() {
@@ -269,15 +252,28 @@ func main() {
 		metricsPath   = flag.String("web.telemetry-path", "/metrics", "Path under which to expose metrics.")
 		bindURI       = flag.String("bind.statsuri", "http://localhost:8053/", "HTTP XML API address of an Bind server.")
 		bindTimeout   = flag.Duration("bind.timeout", 10*time.Second, "Timeout for trying to get stats from Bind.")
+		bindPidFile   = flag.String("bind.pid-file", "", "Path to Bind's pid file to export process information.")
 	)
 	flag.Parse()
 
-	initLogging()
+	prometheus.MustRegister(NewExporter(*bindURI, *bindTimeout))
+	if *bindPidFile != "" {
+		procExporter := prometheus.NewProcessCollectorPIDFn(
+			func() (int, error) {
+				content, err := ioutil.ReadFile(*bindPidFile)
+				if err != nil {
+					return 0, fmt.Errorf("Can't read pid file: %s", err)
+				}
+				value, err := strconv.Atoi(strings.TrimSpace(string(content)))
+				if err != nil {
+					return 0, fmt.Errorf("Can't parse pid file: %s", err)
+				}
+				return value, nil
+			}, namespace)
+		prometheus.MustRegister(procExporter)
+	}
 
-	exporter := NewExporter(*bindURI, *bindTimeout)
-	prometheus.MustRegister(exporter)
-
-	log.Println("Starting Server:", *listenAddress)
+	log.Info("Starting Server: ", *listenAddress)
 	http.Handle(*metricsPath, prometheus.Handler())
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`<html>
