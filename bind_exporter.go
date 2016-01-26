@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"net"
 	"net/http"
 	_ "net/http/pprof"
@@ -40,6 +41,11 @@ var (
 		prometheus.BuildFQName(namespace, "", "resolver_queries_total"),
 		"Number of outgoing DNS queries.",
 		[]string{"view", "name"}, nil,
+	)
+	resolverQueryDuration = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "resolver_query_duration_seconds"),
+		"Resolver query round-trip time in seconds.",
+		[]string{"view"}, nil,
 	)
 )
 
@@ -78,6 +84,7 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- incomingQueries
 	ch <- incomingRequests
 	ch <- resolverQueries
+	ch <- resolverQueryDuration
 }
 
 // Collect fetches the stats from configured bind location and
@@ -127,7 +134,38 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 				resolverQueries, prometheus.CounterValue, float64(s.Counter), v.Name, s.Name,
 			)
 		}
+
+		if buckets, count, err := histogram(v.Resstat); err == nil {
+			ch <- prometheus.MustNewConstHistogram(
+				resolverQueryDuration, count, math.NaN(), buckets, v.Name,
+			)
+		} else {
+			log.Warn("Error parsing RTT:", err)
+		}
 	}
+}
+
+func histogram(stats []Stat) (map[float64]uint64, uint64, error) {
+	buckets := map[float64]uint64{}
+	var count uint64
+
+	for _, s := range stats {
+		if strings.HasPrefix(s.Name, qryRTT) {
+			b := math.Inf(0)
+			if !strings.HasSuffix(s.Name, "+") {
+				var err error
+				rrt := strings.TrimPrefix(s.Name, qryRTT)
+				b, err = strconv.ParseFloat(rrt, 32)
+				if err != nil {
+					return buckets, 0, fmt.Errorf("could not parse RTT: %s", rrt)
+				}
+			}
+
+			buckets[b/1000] = count + uint64(s.Counter)
+			count += uint64(s.Counter)
+		}
+	}
+	return buckets, count, nil
 }
 
 func main() {
