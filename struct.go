@@ -73,7 +73,7 @@ type Server struct {
 	Requests  Requests  `xml:"requests"`   //Most important stats
 	QueriesIn QueriesIn `xml:"queries-in"` //Most important stats
 
-	NsStats     []Stat `xml:"nstat"`
+	NsStats     []Stat `xml:"nsstat"`
 	SocketStats []Stat `xml:"socketstat"`
 	ZoneStats   []Stat `xml:"zonestats"`
 }

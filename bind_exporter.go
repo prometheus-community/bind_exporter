@@ -111,6 +111,19 @@ var (
 		"ValOk":         resolverDNSSECSucess,
 		"ValNegOk":      resolverDNSSECSucess,
 	}
+	serverReponses = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "responses_total"),
+		"Number of responses sent.",
+		[]string{"result"}, nil,
+	)
+	serverLabelStats = map[string]*prometheus.Desc{
+		"QrySuccess":  serverReponses,
+		"QryReferral": serverReponses,
+		"QryNxrrset":  serverReponses,
+		"QrySERVFAIL": serverReponses,
+		"QryFORMERR":  serverReponses,
+		"QryNXDOMAIN": serverReponses,
+	}
 	tasksRunning = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "tasks_running"),
 		"Number of running tasks.",
@@ -165,6 +178,7 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	for _, desc := range resolverMetricStats {
 		ch <- desc
 	}
+	ch <- serverReponses
 	ch <- tasksRunning
 	ch <- workerThreads
 }
@@ -208,6 +222,15 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 		ch <- prometheus.MustNewConstMetric(
 			incomingRequests, prometheus.CounterValue, float64(s.Counter), s.Name,
 		)
+	}
+
+	for _, s := range stats.Server.NsStats {
+		if desc, ok := serverLabelStats[s.Name]; ok {
+			r := strings.TrimPrefix(s.Name, "Qry")
+			ch <- prometheus.MustNewConstMetric(
+				desc, prometheus.CounterValue, float64(s.Counter), r,
+			)
+		}
 	}
 
 	for _, v := range stats.Views {
