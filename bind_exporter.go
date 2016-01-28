@@ -35,7 +35,7 @@ var (
 	)
 	incomingRequests = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "incoming_requests_total"),
-		"Number of incomming DNS queries.",
+		"Number of incomming DNS requests.",
 		[]string{"name"}, nil,
 	)
 	resolverCache = prometheus.NewDesc(
@@ -46,7 +46,7 @@ var (
 	resolverQueries = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, resolver, "queries_total"),
 		"Number of outgoing DNS queries.",
-		[]string{"view", "name"}, nil,
+		[]string{"view", "type"}, nil,
 	)
 	resolverQueryDuration = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, resolver, "query_duration_seconds"),
