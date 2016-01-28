@@ -310,7 +310,7 @@ func histogram(stats []Stat) (map[float64]uint64, uint64, error) {
 
 func main() {
 	var (
-		listenAddress = flag.String("web.listen-address", ":9109", "Address to listen on for web interface and telemetry.")
+		listenAddress = flag.String("web.listen-address", ":9119", "Address to listen on for web interface and telemetry.")
 		metricsPath   = flag.String("web.telemetry-path", "/metrics", "Path under which to expose metrics.")
 		bindURI       = flag.String("bind.statsuri", "http://localhost:8053/", "HTTP XML API address of an Bind server.")
 		bindTimeout   = flag.Duration("bind.timeout", 10*time.Second, "Timeout for trying to get stats from Bind.")
