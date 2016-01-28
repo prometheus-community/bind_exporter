@@ -38,7 +38,8 @@ type Socket struct {
 }
 
 type Socketmgr struct {
-	Sockets []Socket `xml:"sockets>socket"`
+	References uint     `xml:"references"`
+	Sockets    []Socket `xml:"sockets>socket"`
 }
 
 type Task struct {
