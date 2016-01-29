@@ -18,30 +18,48 @@ type Zone struct {
 
 type Stat struct {
 	Name    string `xml:"name"`
-	Counter int    `xml:"counter"`
+	Counter uint   `xml:"counter"`
 }
 
 type View struct {
 	Name    string `xml:"name"`
-	Zones   []Zone `xml:"zones>zone"`
-	Resstat []Stat `xml:"resstat"`
+	Cache   []Stat `xml:"cache>rrset"`
 	Rdtype  []Stat `xml:"rdtype"`
+	Resstat []Stat `xml:"resstat"`
+	Zones   []Zone `xml:"zones>zone"`
 }
 
 //TODO expand
 type Socket struct {
-	Id           string `xml:"id"`
+	ID           string `xml:"id"`
 	Name         string `xml:"name"`
 	LocalAddress string `xml:"local-address"`
+	References   uint   `xml:"references"`
 }
 
 type Socketmgr struct {
-	References int      `xml:"references"`
+	References uint     `xml:"references"`
 	Sockets    []Socket `xml:"sockets>socket"`
 }
 
+type Task struct {
+	ID         string `xml:"id"`
+	Name       string `xml:"name"`
+	Quantum    uint   `xml:"quantum"`
+	References uint   `xml:"references"`
+	State      string `xml:"state"`
+}
+
+type ThreadModel struct {
+	Type           string `xml:"type"`
+	WorkerThreads  uint   `xml:"worker-threads"`
+	DefaultQuantum uint   `xml:"default-quantum"`
+	TasksRunning   uint   `xml:"tasks-running"`
+}
+
 type Taskmgr struct {
-	//TODO
+	Tasks       []Task      `xml:"tasks>task"`
+	ThreadModel ThreadModel `xml:"thread-model"`
 }
 
 type QueriesIn struct {
@@ -56,7 +74,7 @@ type Server struct {
 	Requests  Requests  `xml:"requests"`   //Most important stats
 	QueriesIn QueriesIn `xml:"queries-in"` //Most important stats
 
-	NsStats     []Stat `xml:"nstat"`
+	NsStats     []Stat `xml:"nsstat"`
 	SocketStats []Stat `xml:"socketstat"`
 	ZoneStats   []Stat `xml:"zonestats"`
 }

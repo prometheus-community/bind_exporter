@@ -31,17 +31,22 @@ var (
 	incomingQueries = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "incoming_queries_total"),
 		"Number of incomming DNS queries.",
-		[]string{"name"}, nil,
+		[]string{"type"}, nil,
 	)
 	incomingRequests = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "incoming_requests_total"),
-		"Number of incomming DNS queries.",
+		"Number of incomming DNS requests.",
 		[]string{"name"}, nil,
+	)
+	resolverCache = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, resolver, "cache_rrsets"),
+		"Number of RRSets in Cache database.",
+		[]string{"view", "type"}, nil,
 	)
 	resolverQueries = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, resolver, "queries_total"),
 		"Number of outgoing DNS queries.",
-		[]string{"view", "name"}, nil,
+		[]string{"view", "type"}, nil,
 	)
 	resolverQueryDuration = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, resolver, "query_duration_seconds"),
@@ -106,6 +111,37 @@ var (
 		"ValOk":         resolverDNSSECSucess,
 		"ValNegOk":      resolverDNSSECSucess,
 	}
+	serverQueryErrors = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "query_errors_total"),
+		"Number of query failures.",
+		[]string{"error"}, nil,
+	)
+	serverReponses = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "responses_total"),
+		"Number of responses sent.",
+		[]string{"result"}, nil,
+	)
+	serverLabelStats = map[string]*prometheus.Desc{
+		"QryDuplicate": serverQueryErrors,
+		"QryDropped":   serverQueryErrors,
+		"QryFailure":   serverQueryErrors,
+		"QrySuccess":   serverReponses,
+		"QryReferral":  serverReponses,
+		"QryNxrrset":   serverReponses,
+		"QrySERVFAIL":  serverReponses,
+		"QryFORMERR":   serverReponses,
+		"QryNXDOMAIN":  serverReponses,
+	}
+	tasksRunning = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "tasks_running"),
+		"Number of running tasks.",
+		nil, nil,
+	)
+	workerThreads = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "worker_threads"),
+		"Total number of available worker threads.",
+		nil, nil,
+	)
 )
 
 // Exporter collects Binds stats from the given server and exports
@@ -150,6 +186,9 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	for _, desc := range resolverMetricStats {
 		ch <- desc
 	}
+	ch <- serverReponses
+	ch <- tasksRunning
+	ch <- workerThreads
 }
 
 // Collect fetches the stats from configured bind location and
@@ -181,19 +220,34 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 		return
 	}
 
-	serverNode := root.Bind.Statistics.Server
-	for _, s := range serverNode.QueriesIn.Rdtype {
+	stats := root.Bind.Statistics
+	for _, s := range stats.Server.QueriesIn.Rdtype {
 		ch <- prometheus.MustNewConstMetric(
 			incomingQueries, prometheus.CounterValue, float64(s.Counter), s.Name,
 		)
 	}
-	for _, s := range serverNode.Requests.Opcode {
+	for _, s := range stats.Server.Requests.Opcode {
 		ch <- prometheus.MustNewConstMetric(
 			incomingRequests, prometheus.CounterValue, float64(s.Counter), s.Name,
 		)
 	}
 
-	for _, v := range root.Bind.Statistics.Views {
+	for _, s := range stats.Server.NsStats {
+		if desc, ok := serverLabelStats[s.Name]; ok {
+			r := strings.TrimPrefix(s.Name, "Qry")
+			ch <- prometheus.MustNewConstMetric(
+				desc, prometheus.CounterValue, float64(s.Counter), r,
+			)
+		}
+	}
+
+	for _, v := range stats.Views {
+		for _, s := range v.Cache {
+			ch <- prometheus.MustNewConstMetric(
+				resolverCache, prometheus.GaugeValue, float64(s.Counter), v.Name, s.Name,
+			)
+		}
+
 		for _, s := range v.Rdtype {
 			ch <- prometheus.MustNewConstMetric(
 				resolverQueries, prometheus.CounterValue, float64(s.Counter), v.Name, s.Name,
@@ -221,6 +275,14 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 			log.Warn("Error parsing RTT:", err)
 		}
 	}
+	threadModel := stats.Taskmgr.ThreadModel
+	ch <- prometheus.MustNewConstMetric(
+		tasksRunning, prometheus.GaugeValue, float64(threadModel.TasksRunning),
+	)
+	ch <- prometheus.MustNewConstMetric(
+		workerThreads, prometheus.GaugeValue, float64(threadModel.WorkerThreads),
+	)
+
 }
 
 func histogram(stats []Stat) (map[float64]uint64, uint64, error) {
@@ -248,7 +310,7 @@ func histogram(stats []Stat) (map[float64]uint64, uint64, error) {
 
 func main() {
 	var (
-		listenAddress = flag.String("web.listen-address", ":9109", "Address to listen on for web interface and telemetry.")
+		listenAddress = flag.String("web.listen-address", ":9119", "Address to listen on for web interface and telemetry.")
 		metricsPath   = flag.String("web.telemetry-path", "/metrics", "Path under which to expose metrics.")
 		bindURI       = flag.String("bind.statsuri", "http://localhost:8053/", "HTTP XML API address of an Bind server.")
 		bindTimeout   = flag.Duration("bind.timeout", 10*time.Second, "Timeout for trying to get stats from Bind.")
