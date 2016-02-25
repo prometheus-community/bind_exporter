@@ -173,7 +173,6 @@ func NewExporter(uri string, timeout time.Duration) *Exporter {
 func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- up
 	ch <- incomingQueries
-	ch <- incomingQueriesZone
 	ch <- resolverDNSSECSucess
 	ch <- resolverQueries
 	ch <- resolverQueryDuration
