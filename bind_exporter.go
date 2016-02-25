@@ -25,18 +25,14 @@ const (
 var (
 	up = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "up"),
-		"Was the Bind instance query successful?",
+		"Is the Bind instance up and running?",
 		nil, nil,
 	)
+	// Total incoming queries, per type (opcode/rrtype) and code (opcode number, RR)
 	incomingQueries = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "incoming_queries_total"),
-		"Number of incomming DNS queries.",
-		[]string{"type"}, nil,
-	)
-	incomingRequests = prometheus.NewDesc(
-		prometheus.BuildFQName(namespace, "", "incoming_requests_total"),
-		"Number of incomming DNS requests.",
-		[]string{"name"}, nil,
+		"Number of incoming DNS queries.",
+		[]string{"type", "code"}, nil,
 	)
 	resolverCache = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, resolver, "cache_rrsets"),
@@ -177,7 +173,7 @@ func NewExporter(uri string, timeout time.Duration) *Exporter {
 func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- up
 	ch <- incomingQueries
-	ch <- incomingRequests
+	ch <- incomingQueriesZone
 	ch <- resolverDNSSECSucess
 	ch <- resolverQueries
 	ch <- resolverQueryDuration
@@ -214,32 +210,24 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 
 	status = 1
 
-	root := Isc{}
-	if err := xml.Unmarshal([]byte(body), &root); err != nil {
+	stats, err := unmarshal(body)
+	if err != nil {
 		log.Error("Failed to unmarshal XML response: ", err)
 		return
 	}
 
-	stats := root.Bind.Statistics
-	for _, s := range stats.Server.QueriesIn.Rdtype {
-		ch <- prometheus.MustNewConstMetric(
-			incomingQueries, prometheus.CounterValue, float64(s.Counter), s.Name,
-		)
-	}
-	for _, s := range stats.Server.Requests.Opcode {
-		ch <- prometheus.MustNewConstMetric(
-			incomingRequests, prometheus.CounterValue, float64(s.Counter), s.Name,
-		)
-	}
-
-	for _, s := range stats.Server.NsStats {
-		if desc, ok := serverLabelStats[s.Name]; ok {
-			r := strings.TrimPrefix(s.Name, "Qry")
+	for _, s := range stats.Server.Counters {
+		if s.Type != "opcode" && s.Type != "qtype" {
+			continue
+		}
+		for _, c := range s.Counter {
 			ch <- prometheus.MustNewConstMetric(
-				desc, prometheus.CounterValue, float64(s.Counter), r,
+				incomingQueries, prometheus.CounterValue, float64(c.Counter), s.Type, c.Name,
 			)
 		}
 	}
+
+	// stats.Views.Zones has zone stats
 
 	for _, v := range stats.Views {
 		for _, s := range v.Cache {
@@ -347,4 +335,12 @@ func main() {
              </html>`))
 	})
 	log.Fatal(http.ListenAndServe(*listenAddress, nil))
+}
+
+func unmarshal(body []byte) (Statistics, error) {
+	root := Statistics{}
+	if err := xml.Unmarshal([]byte(body), &root); err != nil {
+		return root, err
+	}
+	return root, nil
 }
