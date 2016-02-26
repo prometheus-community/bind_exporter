@@ -34,6 +34,16 @@ var (
 		"Number of incoming DNS queries.",
 		[]string{"type", "code"}, nil,
 	)
+	incomingQueriesSuccess = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "incoming_success_queries_total"),
+		"Number of successful DNS queries per zone.",
+		[]string{"view", "zone"}, nil,
+	)
+	incomingQueriesFailure = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "incoming_failure_queries_total"),
+		"Number of failed DNS queries per zone.",
+		[]string{"view", "zone"}, nil,
+	)
 	resolverCache = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, resolver, "cache_rrsets"),
 		"Number of RRSets in Cache database.",
@@ -223,6 +233,23 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 			ch <- prometheus.MustNewConstMetric(
 				incomingQueries, prometheus.CounterValue, float64(c.Counter), s.Type, c.Name,
 			)
+		}
+	}
+	// Per zone metrics
+	for _, v := range stats.Views {
+		for _, z := range v.Zones {
+			for _, c := range z.Counters.Counter {
+				switch c.Name {
+				case "QrySuccess":
+					ch <- prometheus.MustNewConstMetric(
+						incomingQueriesSuccess, prometheus.CounterValue, float64(c.Counter), v.Name, z.Name,
+					)
+				case "QrySERVFAIL":
+					ch <- prometheus.MustNewConstMetric(
+						incomingQueriesFailure, prometheus.CounterValue, float64(c.Counter), v.Name, z.Name,
+					)
+				}
+			}
 		}
 	}
 
