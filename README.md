@@ -9,7 +9,7 @@ make
 ./bind_exporter [flags]
 ```
 
-## Troubeshooting
+## Troubleshooting
 
 Make sure BIND was built with libxml2 support. You can check with the following
 command: `named -V | grep libxml2`.
