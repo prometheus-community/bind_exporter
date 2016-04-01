@@ -1,32 +1,37 @@
 package main
 
-import (
-	"encoding/xml"
-)
+import "time"
 
-const (
-	qryRTT = "QryRTT"
-)
+const qryRTT = "QryRTT"
 
 type Zone struct {
-	Name       string `xml:"name"`
-	Rdataclass string `xml:"rdataclass"`
-	Serial     string `xml:"serial"`
-	//TODO a zone can also have a huge number of counters
-	//              <counters>
+	Name       string   `xml:"name,attr"`
+	Rdataclass string   `xml:"rdataclass,attr"`
+	Serial     string   `xml:"serial"`
+	Counters   Counters `xml:"counters"`
 }
 
 type Stat struct {
-	Name    string `xml:"name"`
-	Counter uint   `xml:"counter"`
+	Counter int    `xml:"counter"`
+	Name    string `xml:"name,attr"`
+}
+
+type Counters struct {
+	Type    string    `xml:"type,attr"`
+	Counter []Counter `xml:"counter"`
+}
+
+type Counter struct {
+	Counter int    `xml:",chardata"`
+	Name    string `xml:"name,attr"`
 }
 
 type View struct {
-	Name    string `xml:"name"`
+	Name    string `xml:"name,attr"`
+	Zones   []Zone `xml:"zones>zone"`
 	Cache   []Stat `xml:"cache>rrset"`
 	Rdtype  []Stat `xml:"rdtype"`
 	Resstat []Stat `xml:"resstat"`
-	Zones   []Zone `xml:"zones>zone"`
 }
 
 //TODO expand
@@ -71,12 +76,9 @@ type Requests struct {
 }
 
 type Server struct {
-	Requests  Requests  `xml:"requests"`   //Most important stats
-	QueriesIn QueriesIn `xml:"queries-in"` //Most important stats
-
-	NsStats     []Stat `xml:"nsstat"`
-	SocketStats []Stat `xml:"socketstat"`
-	ZoneStats   []Stat `xml:"zonestats"`
+	BootTime   time.Time  `xml:"boot-time"`
+	ConfigTime time.Time  `xml:"config-time"`
+	Counters   []Counters `xml:"counters"`
 }
 
 type Memory struct {
@@ -84,16 +86,11 @@ type Memory struct {
 }
 
 type Statistics struct {
-	Views     []View    `xml:"views>view"`
+	Server Server `xml:"server"`
+
+	Views []View `xml:"views>view"`
+
 	Socketmgr Socketmgr `xml:"socketmgr"`
 	Taskmgr   Taskmgr   `xml:"taskmgr"`
-	Server    Server    `xml:"server"`
 	Memory    Memory    `xml:"memory"`
-}
-type Bind struct {
-	Statistics Statistics `xml:"statistics"`
-}
-type Isc struct {
-	XMLName xml.Name `xml:"isc"`
-	Bind    Bind     `xml:"bind"`
 }
