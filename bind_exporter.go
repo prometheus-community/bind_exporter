@@ -9,12 +9,14 @@ import (
 	"net"
 	"net/http"
 	_ "net/http/pprof"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/log"
+	"github.com/prometheus/common/version"
 )
 
 const (
@@ -310,13 +312,21 @@ func histogram(stats []Stat) (map[float64]uint64, uint64, error) {
 
 func main() {
 	var (
-		listenAddress = flag.String("web.listen-address", ":9119", "Address to listen on for web interface and telemetry.")
-		metricsPath   = flag.String("web.telemetry-path", "/metrics", "Path under which to expose metrics.")
 		bindURI       = flag.String("bind.statsuri", "http://localhost:8053/", "HTTP XML API address of an Bind server.")
 		bindTimeout   = flag.Duration("bind.timeout", 10*time.Second, "Timeout for trying to get stats from Bind.")
 		bindPidFile   = flag.String("bind.pid-file", "", "Path to Bind's pid file to export process information.")
+		showVersion   = flag.Bool("version", false, "Print version information.")
+		listenAddress = flag.String("web.listen-address", ":9119", "Address to listen on for web interface and telemetry.")
+		metricsPath   = flag.String("web.telemetry-path", "/metrics", "Path under which to expose metrics.")
 	)
 	flag.Parse()
+
+	if *showVersion {
+		fmt.Fprintln(os.Stdout, version.Print("bind_exporter"))
+		os.Exit(0)
+	}
+	log.Infoln("Starting bind_exporter", version.Info())
+	log.Infoln("Build context", version.BuildContext())
 
 	prometheus.MustRegister(NewExporter(*bindURI, *bindTimeout))
 	if *bindPidFile != "" {
