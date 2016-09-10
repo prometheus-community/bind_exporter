@@ -2,67 +2,99 @@ package v2
 
 import (
 	"encoding/xml"
-	"fmt"
-	"io/ioutil"
 	"net/http"
+	"time"
 
 	"github.com/digitalocean/bind_exporter/bind"
 )
 
+type Isc struct {
+	Bind    Bind     `xml:"bind"`
+	XMLName xml.Name `xml:"isc"`
+}
+
+type Bind struct {
+	Statistics Statistics `xml:"statistics"`
+}
+
+type Statistics struct {
+	Memory    struct{}         `xml:"memory"`
+	Server    Server           `xml:"server"`
+	Socketmgr struct{}         `xml:"socketmgr"`
+	Taskmgr   bind.TaskManager `xml:"taskmgr"`
+	Views     []View           `xml:"views>view"`
+}
+
+type Server struct {
+	BootTime    time.Time `xml:"boot-time"`
+	ConfigTime  time.Time `xml:"config-time"`
+	NSStats     []Counter `xml:"nsstat"`
+	QueriesIn   []Counter `xml:"queries-in>rdtype"`
+	Requests    []Counter `xml:"requests>opcode"`
+	SocketStats []Counter `xml:"socketstat"`
+	ZoneStats   []Counter `xml:"zonestat"`
+}
+
+type View struct {
+	Name    string       `xml:"name"`
+	Cache   []bind.Gauge `xml:"cache>rrset"`
+	Rdtype  []Counter    `xml:"rdtype"`
+	Resstat []Counter    `xml:"resstat"`
+	Zones   []Counter    `xml:"zones>zone"`
+}
+
+type Zone struct {
+	Name       string `xml:"name"`
+	Rdataclass string `xml:"rdataclass"`
+	Serial     string `xml:"serial"`
+}
+
+type Counter struct {
+	Name    string `xml:"name"`
+	Counter uint   `xml:"counter"`
+}
+
 // Client implements bind.Client and can be used to query a BIND v2 API.
 type Client struct {
-	url  string
-	http *http.Client
+	*bind.XMLClient
 }
 
 // NewClient returns an initialized Client.
 func NewClient(url string, c *http.Client) *Client {
-	return &Client{
-		url:  url,
-		http: c,
-	}
+	return &Client{XMLClient: bind.NewXMLClient(url, c)}
 }
 
-// Stats implements bind.Stats.
-func (c *Client) Stats() (bind.Statistics, error) {
+// Stats implements bind.Stats. The BIND v2 API doesn't provide individual
+// endpoints for different statistic groups, the passed parameters don't have
+// any effect.
+func (c *Client) Stats(...bind.StatisticGroup) (bind.Statistics, error) {
 	s := bind.Statistics{}
 
-	resp, err := c.http.Get(c.url)
-	if err != nil {
-		return s, fmt.Errorf("error querying stats: %s", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return s, fmt.Errorf("failed to read response: %s", err)
-	}
-
 	root := Isc{}
-	if err := xml.Unmarshal([]byte(body), &root); err != nil {
-		return s, fmt.Errorf("Failed to unmarshal XML response: %s", err)
+	if err := c.Get("/", &root); err != nil {
+		return s, err
 	}
 
 	stats := root.Bind.Statistics
-	for _, t := range stats.Server.QueriesIn.Rdtype {
-		s.Server.IncomingQueries = append(s.Server.IncomingQueries, stat(t))
+	for _, t := range stats.Server.QueriesIn {
+		s.Server.IncomingQueries = append(s.Server.IncomingQueries, counter(t))
 	}
-	for _, t := range stats.Server.Requests.Opcode {
-		s.Server.IncomingRequests = append(s.Server.IncomingRequests, stat(t))
+	for _, t := range stats.Server.Requests {
+		s.Server.IncomingRequests = append(s.Server.IncomingRequests, counter(t))
 	}
-	for _, t := range stats.Server.NsStats {
-		s.Server.NSStats = append(s.Server.NSStats, stat(t))
+	for _, t := range stats.Server.NSStats {
+		s.Server.NameServerStats = append(s.Server.NameServerStats, counter(t))
 	}
 	for _, view := range stats.Views {
-		v := bind.View{Name: view.Name}
-		for _, t := range view.Cache {
-			v.Cache = append(v.Cache, stat(t))
+		v := bind.View{
+			Name:  view.Name,
+			Cache: view.Cache,
 		}
 		for _, t := range view.Rdtype {
-			v.ResolverQueries = append(v.ResolverQueries, stat(t))
+			v.ResolverQueries = append(v.ResolverQueries, counter(t))
 		}
 		for _, t := range view.Resstat {
-			v.ResolverStats = append(v.ResolverStats, stat(t))
+			v.ResolverStats = append(v.ResolverStats, counter(t))
 		}
 		s.Views = append(s.Views, v)
 	}
@@ -71,9 +103,9 @@ func (c *Client) Stats() (bind.Statistics, error) {
 	return s, nil
 }
 
-func stat(s Stat) bind.Stat {
-	return bind.Stat{
-		Name:    s.Name,
-		Counter: s.Counter,
+func counter(c Counter) bind.Counter {
+	return bind.Counter{
+		Name:    c.Name,
+		Counter: c.Counter,
 	}
 }

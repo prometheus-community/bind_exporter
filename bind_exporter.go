@@ -14,6 +14,7 @@ import (
 
 	"github.com/digitalocean/bind_exporter/bind"
 	"github.com/digitalocean/bind_exporter/bind/v2"
+	"github.com/digitalocean/bind_exporter/bind/v3"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/log"
@@ -147,25 +148,58 @@ var (
 	)
 )
 
-// Exporter collects Binds stats from the given server and exports them using
-// the prometheus metrics package.
-type Exporter struct {
-	client bind.Client
+type collectorConstructor func(*bind.Statistics) prometheus.Collector
+
+type serverCollector struct {
+	stats *bind.Statistics
 }
 
-// NewExporter returns an initialized Exporter.
-func NewExporter(url string, timeout time.Duration) *Exporter {
-	return &Exporter{
-		client: v2.NewClient(url, &http.Client{Timeout: timeout}),
+// newServerCollector implements collectorConstructor.
+func newServerCollector(s *bind.Statistics) prometheus.Collector {
+	return &serverCollector{stats: s}
+}
+
+// Describe implements prometheus.Collector.
+func (c *serverCollector) Describe(ch chan<- *prometheus.Desc) {
+	ch <- incomingQueries
+	ch <- incomingRequests
+	ch <- serverQueryErrors
+	ch <- serverReponses
+}
+
+// Collect implements prometheus.Collector.
+func (c *serverCollector) Collect(ch chan<- prometheus.Metric) {
+	for _, s := range c.stats.Server.IncomingQueries {
+		ch <- prometheus.MustNewConstMetric(
+			incomingQueries, prometheus.CounterValue, float64(s.Counter), s.Name,
+		)
+	}
+	for _, s := range c.stats.Server.IncomingRequests {
+		ch <- prometheus.MustNewConstMetric(
+			incomingRequests, prometheus.CounterValue, float64(s.Counter), s.Name,
+		)
+	}
+	for _, s := range c.stats.Server.NameServerStats {
+		if desc, ok := serverLabelStats[s.Name]; ok {
+			r := strings.TrimPrefix(s.Name, "Qry")
+			ch <- prometheus.MustNewConstMetric(
+				desc, prometheus.CounterValue, float64(s.Counter), r,
+			)
+		}
 	}
 }
 
-// Describe describes all the metrics ever exported by the bind exporter. It
-// implements prometheus.Collector.
-func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
-	ch <- up
-	ch <- incomingQueries
-	ch <- incomingRequests
+type viewCollector struct {
+	stats *bind.Statistics
+}
+
+// newViewCollector implements collectorConstructor.
+func newViewCollector(s *bind.Statistics) prometheus.Collector {
+	return &viewCollector{stats: s}
+}
+
+// Describe implements prometheus.Collector.
+func (c *viewCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- resolverDNSSECSucess
 	ch <- resolverQueries
 	ch <- resolverQueryDuration
@@ -174,47 +208,14 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	for _, desc := range resolverMetricStats {
 		ch <- desc
 	}
-	ch <- serverReponses
-	ch <- tasksRunning
-	ch <- workerThreads
 }
 
-// Collect fetches the stats from configured bind location and delivers them as
-// Prometheus metrics. It implements prometheus.Collector.
-func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
-	stats, err := e.client.Stats()
-	if err != nil {
-		ch <- prometheus.MustNewConstMetric(up, prometheus.GaugeValue, 0)
-		log.Error("Couldn't retrieve BIND stats: ", err)
-		return
-	}
-	ch <- prometheus.MustNewConstMetric(up, prometheus.GaugeValue, 1)
-
-	// Server statistics.
-	for _, s := range stats.Server.IncomingQueries {
-		ch <- prometheus.MustNewConstMetric(
-			incomingQueries, prometheus.CounterValue, float64(s.Counter), s.Name,
-		)
-	}
-	for _, s := range stats.Server.IncomingRequests {
-		ch <- prometheus.MustNewConstMetric(
-			incomingRequests, prometheus.CounterValue, float64(s.Counter), s.Name,
-		)
-	}
-	for _, s := range stats.Server.NSStats {
-		if desc, ok := serverLabelStats[s.Name]; ok {
-			r := strings.TrimPrefix(s.Name, "Qry")
-			ch <- prometheus.MustNewConstMetric(
-				desc, prometheus.CounterValue, float64(s.Counter), r,
-			)
-		}
-	}
-
-	// View statistics.
-	for _, v := range stats.Views {
+// Collect implements prometheus.Collector.
+func (c *viewCollector) Collect(ch chan<- prometheus.Metric) {
+	for _, v := range c.stats.Views {
 		for _, s := range v.Cache {
 			ch <- prometheus.MustNewConstMetric(
-				resolverCache, prometheus.GaugeValue, float64(s.Counter), v.Name, s.Name,
+				resolverCache, prometheus.GaugeValue, float64(s.Gauge), v.Name, s.Name,
 			)
 		}
 		for _, s := range v.ResolverQueries {
@@ -242,9 +243,26 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 			log.Warn("Error parsing RTT:", err)
 		}
 	}
+}
 
-	// TaskManager statistics.
-	threadModel := stats.TaskManager.ThreadModel
+type taskCollector struct {
+	stats *bind.Statistics
+}
+
+// newTaskCollector implements collectorConstructor.
+func newTaskCollector(s *bind.Statistics) prometheus.Collector {
+	return &taskCollector{stats: s}
+}
+
+// Describe implements prometheus.Collector.
+func (c *taskCollector) Describe(ch chan<- *prometheus.Desc) {
+	ch <- tasksRunning
+	ch <- workerThreads
+}
+
+// Collect implements prometheus.Collector.
+func (c *taskCollector) Collect(ch chan<- prometheus.Metric) {
+	threadModel := c.stats.TaskManager.ThreadModel
 	ch <- prometheus.MustNewConstMetric(
 		tasksRunning, prometheus.GaugeValue, float64(threadModel.TasksRunning),
 	)
@@ -253,7 +271,66 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	)
 }
 
-func histogram(stats []bind.Stat) (map[float64]uint64, uint64, error) {
+// Exporter collects Binds stats from the given server and exports them using
+// the prometheus metrics package.
+type Exporter struct {
+	client     bind.Client
+	collectors []collectorConstructor
+	groups     []bind.StatisticGroup
+}
+
+// NewExporter returns an initialized Exporter.
+func NewExporter(version, url string, timeout time.Duration, g []bind.StatisticGroup) *Exporter {
+	var c bind.Client
+	switch version {
+	case "xml.v2":
+		c = v2.NewClient(url, &http.Client{Timeout: timeout})
+	case "xml.v3":
+		c = v3.NewClient(url, &http.Client{Timeout: timeout})
+	default:
+		panic(fmt.Errorf("invalid bind statistics version %q", version))
+	}
+
+	var cs []collectorConstructor
+	for _, g := range g {
+		switch g {
+		case bind.ServerStats:
+			cs = append(cs, newServerCollector)
+		case bind.ViewStats:
+			cs = append(cs, newViewCollector)
+		case bind.TaskStats:
+			cs = append(cs, newTaskCollector)
+		}
+	}
+
+	return &Exporter{client: c, collectors: cs, groups: g}
+}
+
+// Describe describes all the metrics ever exported by the bind exporter. It
+// implements prometheus.Collector.
+func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
+	ch <- up
+	for _, c := range e.collectors {
+		c(&bind.Statistics{}).Describe(ch)
+	}
+}
+
+// Collect fetches the stats from configured bind location and delivers them as
+// Prometheus metrics. It implements prometheus.Collector.
+func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
+	status := 0.
+	if stats, err := e.client.Stats(e.groups...); err == nil {
+		for _, c := range e.collectors {
+			c(&stats).Collect(ch)
+		}
+		status = 1
+	} else {
+		log.Error("Couldn't retrieve BIND stats: ", err)
+	}
+	ch <- prometheus.MustNewConstMetric(up, prometheus.GaugeValue, status)
+}
+
+func histogram(stats []bind.Counter) (map[float64]uint64, uint64, error) {
 	buckets := map[float64]uint64{}
 	var count uint64
 
@@ -276,15 +353,51 @@ func histogram(stats []bind.Stat) (map[float64]uint64, uint64, error) {
 	return buckets, count, nil
 }
 
+type statisticGroups []bind.StatisticGroup
+
+// String implements flag.Value.
+func (s *statisticGroups) String() string {
+	groups := []string{}
+	for _, g := range *s {
+		groups = append(groups, string(g))
+	}
+	return fmt.Sprintf("%q", strings.Join(groups, ","))
+}
+
+// Set implements flag.Value.
+func (s *statisticGroups) Set(value string) error {
+	if len(value) == 0 {
+		*s = []bind.StatisticGroup{}
+		return nil
+	}
+	for _, dt := range strings.Split(value, ",") {
+		switch dt {
+		case string(bind.ServerStats):
+			*s = append(*s, bind.ServerStats)
+		case string(bind.ViewStats):
+			*s = append(*s, bind.ViewStats)
+		case string(bind.TaskStats):
+			*s = append(*s, bind.TaskStats)
+		default:
+			return fmt.Errorf("unknown stats group %q", dt)
+		}
+	}
+	return nil
+}
+
 func main() {
 	var (
-		bindURI       = flag.String("bind.statsuri", "http://localhost:8053/", "HTTP XML API address of an Bind server.")
+		bindURI       = flag.String("bind.stats-url", "http://localhost:8053/", "HTTP XML API address of an Bind server.")
 		bindTimeout   = flag.Duration("bind.timeout", 10*time.Second, "Timeout for trying to get stats from Bind.")
 		bindPidFile   = flag.String("bind.pid-file", "", "Path to Bind's pid file to export process information.")
+		bindVersion   = flag.String("bind.stats-version", "xml.v2", "BIND statistics version")
 		showVersion   = flag.Bool("version", false, "Print version information.")
 		listenAddress = flag.String("web.listen-address", ":9119", "Address to listen on for web interface and telemetry.")
 		metricsPath   = flag.String("web.telemetry-path", "/metrics", "Path under which to expose metrics.")
+
+		groups = statisticGroups{bind.ServerStats, bind.ViewStats}
 	)
+	flag.Var(&groups, "bind.stats-groups", "Comma-separated list of statistics to collect. Available: [server, view, tasks]")
 	flag.Parse()
 
 	if *showVersion {
@@ -293,8 +406,9 @@ func main() {
 	}
 	log.Infoln("Starting bind_exporter", version.Info())
 	log.Infoln("Build context", version.BuildContext())
+	log.Infoln("Configured to collect statistics", groups.String())
 
-	prometheus.MustRegister(NewExporter(*bindURI, *bindTimeout))
+	prometheus.MustRegister(NewExporter(*bindVersion, *bindURI, *bindTimeout, groups))
 	if *bindPidFile != "" {
 		procExporter := prometheus.NewProcessCollectorPIDFn(
 			func() (int, error) {
