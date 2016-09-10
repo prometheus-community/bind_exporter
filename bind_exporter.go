@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/digitalocean/bind_exporter/bind"
+	"github.com/digitalocean/bind_exporter/bind/auto"
 	"github.com/digitalocean/bind_exporter/bind/v2"
 	"github.com/digitalocean/bind_exporter/bind/v3"
 
@@ -288,7 +289,7 @@ func NewExporter(version, url string, timeout time.Duration, g []bind.StatisticG
 	case "xml.v3":
 		c = v3.NewClient(url, &http.Client{Timeout: timeout})
 	default:
-		panic(fmt.Errorf("invalid bind statistics version %q", version))
+		c = auto.NewClient(url, &http.Client{Timeout: timeout})
 	}
 
 	var cs []collectorConstructor
@@ -390,7 +391,7 @@ func main() {
 		bindURI       = flag.String("bind.stats-url", "http://localhost:8053/", "HTTP XML API address of an Bind server.")
 		bindTimeout   = flag.Duration("bind.timeout", 10*time.Second, "Timeout for trying to get stats from Bind.")
 		bindPidFile   = flag.String("bind.pid-file", "", "Path to Bind's pid file to export process information.")
-		bindVersion   = flag.String("bind.stats-version", "xml.v2", "BIND statistics version")
+		bindVersion   = flag.String("bind.stats-version", "auto", "BIND statistics version. Can be detected automatically. Available: [xml.v2, xml.v3, auto]")
 		showVersion   = flag.Bool("version", false, "Print version information.")
 		listenAddress = flag.String("web.listen-address", ":9119", "Address to listen on for web interface and telemetry.")
 		metricsPath   = flag.String("web.telemetry-path", "/metrics", "Path under which to expose metrics.")

@@ -46,61 +46,85 @@ var (
 	}
 )
 
-func TestBindExporterV2(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "fixtures/v2.xml")
-	}))
-	defer ts.Close()
-
-	groups := []bind.StatisticGroup{bind.ServerStats, bind.ViewStats, bind.TaskStats}
-	o, err := collect(NewExporter("xml.v2", ts.URL, 100*time.Millisecond, groups))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	shouldInclude(t, o, []string{`bind_up 1`}, serverStats, viewStats, taskStats)
+func TestBindExporterV2Client(t *testing.T) {
+	bindExporterTest{
+		server:  newV2Server(),
+		groups:  []bind.StatisticGroup{bind.ServerStats, bind.ViewStats, bind.TaskStats},
+		version: "xml.v2",
+		include: combine([]string{`bind_up 1`}, serverStats, viewStats, taskStats),
+	}.run(t)
 }
 
-func TestBindExporterV3(t *testing.T) {
-	ts := newV3Server()
-	defer ts.Close()
+func TestBindExporterV3Client(t *testing.T) {
+	bindExporterTest{
+		server:  newV3Server(),
+		groups:  []bind.StatisticGroup{bind.ServerStats, bind.ViewStats, bind.TaskStats},
+		version: "xml.v3",
+		include: combine([]string{`bind_up 1`}, serverStats, viewStats, taskStats),
+	}.run(t)
+}
 
-	groups := []bind.StatisticGroup{bind.ServerStats, bind.ViewStats, bind.TaskStats}
-	o, err := collect(NewExporter("xml.v3", ts.URL, 100*time.Millisecond, groups))
-	if err != nil {
-		t.Fatal(err)
+func TestBindExporterAutomaticClient(t *testing.T) {
+	for _, test := range []bindExporterTest{
+		{
+			server:  newV2Server(),
+			groups:  []bind.StatisticGroup{bind.ServerStats},
+			version: "auto",
+			include: combine([]string{`bind_up 1`}, serverStats),
+		},
+		{
+			server:  newV3Server(),
+			groups:  []bind.StatisticGroup{bind.ServerStats},
+			version: "auto",
+			include: combine([]string{`bind_up 1`}, serverStats),
+		},
+	} {
+		test.run(t)
 	}
-
-	shouldInclude(t, o, []string{`bind_up 1`}, serverStats, viewStats, taskStats)
 }
 
 func TestBindExporterStatisticGroups(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "fixtures/v2.xml")
-	}))
-	defer ts.Close()
+	bindExporterTest{
+		server:  newV2Server(),
+		groups:  []bind.StatisticGroup{bind.ServerStats},
+		version: "xml.v2",
+		include: combine([]string{`bind_up 1`}, serverStats),
+		exclude: combine(viewStats, taskStats, []string{`bind_tasks_running 0`, `bind_worker_threads 0`}),
+	}.run(t)
+}
 
-	groups := []bind.StatisticGroup{bind.ServerStats}
-	o, err := collect(NewExporter("xml.v2", ts.URL, 100*time.Millisecond, groups))
+func TestBindExporterBindFailure(t *testing.T) {
+	bindExporterTest{
+		server:  httptest.NewServer(http.HandlerFunc(http.NotFound)),
+		version: "xml.v2",
+		include: []string{`bind_up 0`},
+		exclude: serverStats,
+	}.run(t)
+}
+
+type bindExporterTest struct {
+	server  *httptest.Server
+	groups  []bind.StatisticGroup
+	version string
+	include []string
+	exclude []string
+}
+
+func (b bindExporterTest) run(t *testing.T) {
+	defer b.server.Close()
+
+	o, err := collect(NewExporter(b.version, b.server.URL, 100*time.Millisecond, b.groups))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	shouldInclude(t, o, []string{`bind_up 1`}, serverStats)
-	shouldExclude(t, o, viewStats, taskStats, []string{`bind_tasks_running 0`, `bind_worker_threads 0`})
-}
-
-func shouldInclude(t *testing.T, text []byte, metrics ...[]string) {
-	for _, m := range combine(metrics...) {
-		if !bytes.Contains(text, []byte(m)) {
+	for _, m := range b.include {
+		if !bytes.Contains(o, []byte(m)) {
 			t.Errorf("expected to find metric %q in output", m)
 		}
 	}
-}
-
-func shouldExclude(t *testing.T, text []byte, metrics ...[]string) {
-	for _, m := range combine(metrics...) {
-		if bytes.Contains(text, []byte(m)) {
+	for _, m := range b.exclude {
+		if bytes.Contains(o, []byte(m)) {
 			t.Errorf("expected to not find metric %q in output", m)
 		}
 	}
@@ -133,9 +157,20 @@ func collect(c prometheus.Collector) ([]byte, error) {
 	return b.Bytes(), nil
 }
 
+func newV2Server() *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.RequestURI == "/" {
+			http.ServeFile(w, r, "fixtures/v2.xml")
+		} else {
+			http.NotFound(w, r)
+		}
+	}))
+}
+
 func newV3Server() *httptest.Server {
 	m := map[string]string{
 		"/xml/v3/server": "fixtures/v3/server",
+		"/xml/v3/status": "fixtures/v3/status",
 		"/xml/v3/tasks":  "fixtures/v3/tasks",
 	}
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

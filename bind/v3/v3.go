@@ -10,6 +10,8 @@ import (
 const (
 	// ServerPath is the HTTP path of the v3 server resource.
 	ServerPath = "/xml/v3/server"
+	// StatusPath is the HTTP path of the v3 status resource.
+	StatusPath = "/xml/v3/status"
 	// TasksPath is the HTTP path of the v3 tasks resource.
 	TasksPath = "/xml/v3/tasks"
 
