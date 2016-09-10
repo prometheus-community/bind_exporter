@@ -1,18 +1,19 @@
 package main
 
 import (
-	"encoding/xml"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"math"
-	"net"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/digitalocean/bind_exporter/bind"
+	"github.com/digitalocean/bind_exporter/bind/v2"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/log"
@@ -38,7 +39,7 @@ var (
 	incomingRequests = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "incoming_requests_total"),
 		"Number of incomming DNS requests.",
-		[]string{"name"}, nil,
+		[]string{"opcode"}, nil,
 	)
 	resolverCache = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, resolver, "cache_rrsets"),
@@ -146,36 +147,21 @@ var (
 	)
 )
 
-// Exporter collects Binds stats from the given server and exports
-// them using the prometheus metrics package.
+// Exporter collects Binds stats from the given server and exports them using
+// the prometheus metrics package.
 type Exporter struct {
-	URI    string
-	client *http.Client
+	client bind.Client
 }
 
 // NewExporter returns an initialized Exporter.
-func NewExporter(uri string, timeout time.Duration) *Exporter {
+func NewExporter(url string, timeout time.Duration) *Exporter {
 	return &Exporter{
-		URI: uri,
-		client: &http.Client{
-			Transport: &http.Transport{
-				Dial: func(netw, addr string) (net.Conn, error) {
-					c, err := net.DialTimeout(netw, addr, timeout)
-					if err != nil {
-						return nil, err
-					}
-					if err := c.SetDeadline(time.Now().Add(timeout)); err != nil {
-						return nil, err
-					}
-					return c, nil
-				},
-			},
-		},
+		client: v2.NewClient(url, &http.Client{Timeout: timeout}),
 	}
 }
 
-// Describe describes all the metrics ever exported by the bind
-// exporter. It implements prometheus.Collector.
+// Describe describes all the metrics ever exported by the bind exporter. It
+// implements prometheus.Collector.
 func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- up
 	ch <- incomingQueries
@@ -193,48 +179,29 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- workerThreads
 }
 
-// Collect fetches the stats from configured bind location and
-// delivers them as Prometheus metrics. It implements prometheus.Collector.
+// Collect fetches the stats from configured bind location and delivers them as
+// Prometheus metrics. It implements prometheus.Collector.
 func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
-	var status float64
-	defer func() {
-		ch <- prometheus.MustNewConstMetric(up, prometheus.GaugeValue, status)
-	}()
-
-	resp, err := e.client.Get(e.URI)
+	stats, err := e.client.Stats()
 	if err != nil {
-		log.Error("Error while querying Bind: ", err)
+		ch <- prometheus.MustNewConstMetric(up, prometheus.GaugeValue, 0)
+		log.Error("Couldn't retrieve BIND stats: ", err)
 		return
 	}
-	defer resp.Body.Close()
+	ch <- prometheus.MustNewConstMetric(up, prometheus.GaugeValue, 1)
 
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Error("Failed to read XML response body: ", err)
-		return
-	}
-
-	status = 1
-
-	root := Isc{}
-	if err := xml.Unmarshal([]byte(body), &root); err != nil {
-		log.Error("Failed to unmarshal XML response: ", err)
-		return
-	}
-
-	stats := root.Bind.Statistics
-	for _, s := range stats.Server.QueriesIn.Rdtype {
+	// Server statistics.
+	for _, s := range stats.Server.IncomingQueries {
 		ch <- prometheus.MustNewConstMetric(
 			incomingQueries, prometheus.CounterValue, float64(s.Counter), s.Name,
 		)
 	}
-	for _, s := range stats.Server.Requests.Opcode {
+	for _, s := range stats.Server.IncomingRequests {
 		ch <- prometheus.MustNewConstMetric(
 			incomingRequests, prometheus.CounterValue, float64(s.Counter), s.Name,
 		)
 	}
-
-	for _, s := range stats.Server.NsStats {
+	for _, s := range stats.Server.NSStats {
 		if desc, ok := serverLabelStats[s.Name]; ok {
 			r := strings.TrimPrefix(s.Name, "Qry")
 			ch <- prometheus.MustNewConstMetric(
@@ -243,20 +210,19 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 		}
 	}
 
+	// View statistics.
 	for _, v := range stats.Views {
 		for _, s := range v.Cache {
 			ch <- prometheus.MustNewConstMetric(
 				resolverCache, prometheus.GaugeValue, float64(s.Counter), v.Name, s.Name,
 			)
 		}
-
-		for _, s := range v.Rdtype {
+		for _, s := range v.ResolverQueries {
 			ch <- prometheus.MustNewConstMetric(
 				resolverQueries, prometheus.CounterValue, float64(s.Counter), v.Name, s.Name,
 			)
 		}
-
-		for _, s := range v.Resstat {
+		for _, s := range v.ResolverStats {
 			if desc, ok := resolverMetricStats[s.Name]; ok {
 				ch <- prometheus.MustNewConstMetric(
 					desc, prometheus.CounterValue, float64(s.Counter), v.Name,
@@ -268,8 +234,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 				)
 			}
 		}
-
-		if buckets, count, err := histogram(v.Resstat); err == nil {
+		if buckets, count, err := histogram(v.ResolverStats); err == nil {
 			ch <- prometheus.MustNewConstHistogram(
 				resolverQueryDuration, count, math.NaN(), buckets, v.Name,
 			)
@@ -277,26 +242,27 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 			log.Warn("Error parsing RTT:", err)
 		}
 	}
-	threadModel := stats.Taskmgr.ThreadModel
+
+	// TaskManager statistics.
+	threadModel := stats.TaskManager.ThreadModel
 	ch <- prometheus.MustNewConstMetric(
 		tasksRunning, prometheus.GaugeValue, float64(threadModel.TasksRunning),
 	)
 	ch <- prometheus.MustNewConstMetric(
 		workerThreads, prometheus.GaugeValue, float64(threadModel.WorkerThreads),
 	)
-
 }
 
-func histogram(stats []Stat) (map[float64]uint64, uint64, error) {
+func histogram(stats []bind.Stat) (map[float64]uint64, uint64, error) {
 	buckets := map[float64]uint64{}
 	var count uint64
 
 	for _, s := range stats {
-		if strings.HasPrefix(s.Name, qryRTT) {
+		if strings.HasPrefix(s.Name, bind.QryRTT) {
 			b := math.Inf(0)
 			if !strings.HasSuffix(s.Name, "+") {
 				var err error
-				rrt := strings.TrimPrefix(s.Name, qryRTT)
+				rrt := strings.TrimPrefix(s.Name, bind.QryRTT)
 				b, err = strconv.ParseFloat(rrt, 32)
 				if err != nil {
 					return buckets, 0, fmt.Errorf("could not parse RTT: %s", rrt)
