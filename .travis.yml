@@ -1,0 +1,14 @@
+language: go
+dist: trusty
+
+go:
+  - 1.7
+
+install:
+  - go get github.com/Sirupsen/logrus
+  - go get github.com/prometheus/client_golang/prometheus
+  - go get github.com/prometheus/common/log
+  - go get github.com/prometheus/common/version
+  
+script:
+  - go test ./...
