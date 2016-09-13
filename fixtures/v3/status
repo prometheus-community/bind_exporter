@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="/bind9.xsl"?>
+<statistics version="3.6">
+  <server>
+    <boot-time>2016-09-10T17:22:43Z</boot-time>
+    <config-time>2016-09-10T17:22:43Z</config-time>
+    <current-time>2016-09-10T17:47:04Z</current-time>
+  </server>
+  <views/>
+</statistics>
