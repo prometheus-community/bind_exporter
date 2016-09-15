@@ -1776,7 +1776,7 @@
         </nsstat>
         <nsstat>
           <name>QryRecursion</name>
-          <counter>6094606514</counter>
+          <counter>60946</counter>
         </nsstat>
         <nsstat>
           <name>QryDuplicate</name>

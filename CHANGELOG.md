@@ -6,3 +6,4 @@
 - [FEATURE] Add support for BIND statistics v3
 - [FEATURE] Automatically detect BIND statistics version and use correct client
 - [FEATURE] Provide option to control exported statistics with `-bind.stats-groups`
+- [FEATURE] Export number of queries causing recursion as `bind_query_recursions_total`

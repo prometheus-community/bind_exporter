@@ -20,6 +20,7 @@ var (
 		`bind_query_duplicates_total 216`,
 		`bind_query_errors_total{error="Dropped"} 237`,
 		`bind_query_errors_total{error="Failure"} 2950`,
+		`bind_query_recursions_total 60946`,
 	}
 	viewStats = []string{
 		`bind_resolver_cache_rrsets{type="A",view="_default"} 34324`,

@@ -52,7 +52,7 @@
       <counter name="QrySERVFAIL">150</counter>
       <counter name="QryFORMERR">0</counter>
       <counter name="QryNXDOMAIN">1</counter>
-      <counter name="QryRecursion">155</counter>
+      <counter name="QryRecursion">60946</counter>
       <counter name="QryDuplicate">216</counter>
       <counter name="QryDropped">237</counter>
       <counter name="QryFailure">2950</counter>

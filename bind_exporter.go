@@ -142,6 +142,11 @@ var (
 			"Number of duplicated queries received.",
 			nil, nil,
 		),
+		"QryRecursion": prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "query_recursions_total"),
+			"Number of queries causing recursion.",
+			nil, nil,
+		),
 	}
 	tasksRunning = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "tasks_running"),
