@@ -65,7 +65,7 @@ var (
 	)
 	resolverResponseErrors = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, resolver, "response_errors_total"),
-		"Number of resolver reponse errors received.",
+		"Number of resolver response errors received.",
 		[]string{"view", "error"}, nil,
 	)
 	resolverDNSSECSucess = prometheus.NewDesc(
@@ -127,15 +127,21 @@ var (
 		[]string{"result"}, nil,
 	)
 	serverLabelStats = map[string]*prometheus.Desc{
-		"QryDuplicate": serverQueryErrors,
-		"QryDropped":   serverQueryErrors,
-		"QryFailure":   serverQueryErrors,
-		"QrySuccess":   serverReponses,
-		"QryReferral":  serverReponses,
-		"QryNxrrset":   serverReponses,
-		"QrySERVFAIL":  serverReponses,
-		"QryFORMERR":   serverReponses,
-		"QryNXDOMAIN":  serverReponses,
+		"QryDropped":  serverQueryErrors,
+		"QryFailure":  serverQueryErrors,
+		"QrySuccess":  serverReponses,
+		"QryReferral": serverReponses,
+		"QryNxrrset":  serverReponses,
+		"QrySERVFAIL": serverReponses,
+		"QryFORMERR":  serverReponses,
+		"QryNXDOMAIN": serverReponses,
+	}
+	serverMetricStats = map[string]*prometheus.Desc{
+		"QryDuplicate": prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "query_duplicates_total"),
+			"Number of duplicated queries received.",
+			nil, nil,
+		),
 	}
 	tasksRunning = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "tasks_running"),
@@ -166,6 +172,9 @@ func (c *serverCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- incomingRequests
 	ch <- serverQueryErrors
 	ch <- serverReponses
+	for _, desc := range serverMetricStats {
+		ch <- desc
+	}
 }
 
 // Collect implements prometheus.Collector.
@@ -185,6 +194,11 @@ func (c *serverCollector) Collect(ch chan<- prometheus.Metric) {
 			r := strings.TrimPrefix(s.Name, "Qry")
 			ch <- prometheus.MustNewConstMetric(
 				desc, prometheus.CounterValue, float64(s.Counter), r,
+			)
+		}
+		if desc, ok := serverMetricStats[s.Name]; ok {
+			ch <- prometheus.MustNewConstMetric(
+				desc, prometheus.CounterValue, float64(s.Counter),
 			)
 		}
 	}
