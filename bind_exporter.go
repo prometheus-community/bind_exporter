@@ -33,6 +33,16 @@ var (
 		"Was the Bind instance query successful?",
 		nil, nil,
 	)
+	bootTime = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "boot_time_seconds"),
+		"Start time of the BIND process since unix epoch in seconds.",
+		nil, nil,
+	)
+	configTime = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "config_time_seconds"),
+		"Time of the last reconfiguration since unix epoch in seconds.",
+		nil, nil,
+	)
 	incomingQueries = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "incoming_queries_total"),
 		"Number of incomming DNS queries.",
@@ -173,6 +183,8 @@ func newServerCollector(s *bind.Statistics) prometheus.Collector {
 
 // Describe implements prometheus.Collector.
 func (c *serverCollector) Describe(ch chan<- *prometheus.Desc) {
+	ch <- bootTime
+	ch <- configTime
 	ch <- incomingQueries
 	ch <- incomingRequests
 	ch <- serverQueryErrors
@@ -184,6 +196,14 @@ func (c *serverCollector) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect implements prometheus.Collector.
 func (c *serverCollector) Collect(ch chan<- prometheus.Metric) {
+	ch <- prometheus.MustNewConstMetric(
+		bootTime, prometheus.GaugeValue, float64(c.stats.Server.BootTime.Unix()),
+	)
+	if !c.stats.Server.ConfigTime.IsZero() {
+		ch <- prometheus.MustNewConstMetric(
+			configTime, prometheus.GaugeValue, float64(c.stats.Server.ConfigTime.Unix()),
+		)
+	}
 	for _, s := range c.stats.Server.IncomingQueries {
 		ch <- prometheus.MustNewConstMetric(
 			incomingQueries, prometheus.CounterValue, float64(s.Counter), s.Name,

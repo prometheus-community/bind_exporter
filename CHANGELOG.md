@@ -7,3 +7,4 @@
 - [FEATURE] Automatically detect BIND statistics version and use correct client
 - [FEATURE] Provide option to control exported statistics with `-bind.stats-groups`
 - [FEATURE] Export number of queries causing recursion as `bind_query_recursions_total`
+- [FEATURE] Export `bind_boot_time_seconds` (v2+v3) and `bind_config_time_seconds` (v3 only)

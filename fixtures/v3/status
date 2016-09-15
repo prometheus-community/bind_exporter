@@ -2,9 +2,9 @@
 <?xml-stylesheet type="text/xsl" href="/bind9.xsl"?>
 <statistics version="3.6">
   <server>
-    <boot-time>2016-09-10T17:22:43Z</boot-time>
-    <config-time>2016-09-10T17:22:43Z</config-time>
-    <current-time>2016-09-10T17:47:04Z</current-time>
+    <boot-time>2016-09-06T22:52:15Z</boot-time>
+    <config-time>2016-09-06T22:58:32Z</config-time>
+    <current-time>2016-09-07T03:15:44Z</current-time>
   </server>
   <views/>
 </statistics>
