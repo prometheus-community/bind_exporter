@@ -33,6 +33,16 @@ var (
 		"Was the Bind instance query successful?",
 		nil, nil,
 	)
+	bootTime = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "boot_time_seconds"),
+		"Start time of the BIND process since unix epoch in seconds.",
+		nil, nil,
+	)
+	configTime = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "config_time_seconds"),
+		"Time of the last reconfiguration since unix epoch in seconds.",
+		nil, nil,
+	)
 	incomingQueries = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "incoming_queries_total"),
 		"Number of incomming DNS queries.",
@@ -65,7 +75,7 @@ var (
 	)
 	resolverResponseErrors = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, resolver, "response_errors_total"),
-		"Number of resolver reponse errors received.",
+		"Number of resolver response errors received.",
 		[]string{"view", "error"}, nil,
 	)
 	resolverDNSSECSucess = prometheus.NewDesc(
@@ -127,15 +137,26 @@ var (
 		[]string{"result"}, nil,
 	)
 	serverLabelStats = map[string]*prometheus.Desc{
-		"QryDuplicate": serverQueryErrors,
-		"QryDropped":   serverQueryErrors,
-		"QryFailure":   serverQueryErrors,
-		"QrySuccess":   serverReponses,
-		"QryReferral":  serverReponses,
-		"QryNxrrset":   serverReponses,
-		"QrySERVFAIL":  serverReponses,
-		"QryFORMERR":   serverReponses,
-		"QryNXDOMAIN":  serverReponses,
+		"QryDropped":  serverQueryErrors,
+		"QryFailure":  serverQueryErrors,
+		"QrySuccess":  serverReponses,
+		"QryReferral": serverReponses,
+		"QryNxrrset":  serverReponses,
+		"QrySERVFAIL": serverReponses,
+		"QryFORMERR":  serverReponses,
+		"QryNXDOMAIN": serverReponses,
+	}
+	serverMetricStats = map[string]*prometheus.Desc{
+		"QryDuplicate": prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "query_duplicates_total"),
+			"Number of duplicated queries received.",
+			nil, nil,
+		),
+		"QryRecursion": prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "query_recursions_total"),
+			"Number of queries causing recursion.",
+			nil, nil,
+		),
 	}
 	tasksRunning = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "tasks_running"),
@@ -162,14 +183,27 @@ func newServerCollector(s *bind.Statistics) prometheus.Collector {
 
 // Describe implements prometheus.Collector.
 func (c *serverCollector) Describe(ch chan<- *prometheus.Desc) {
+	ch <- bootTime
+	ch <- configTime
 	ch <- incomingQueries
 	ch <- incomingRequests
 	ch <- serverQueryErrors
 	ch <- serverReponses
+	for _, desc := range serverMetricStats {
+		ch <- desc
+	}
 }
 
 // Collect implements prometheus.Collector.
 func (c *serverCollector) Collect(ch chan<- prometheus.Metric) {
+	ch <- prometheus.MustNewConstMetric(
+		bootTime, prometheus.GaugeValue, float64(c.stats.Server.BootTime.Unix()),
+	)
+	if !c.stats.Server.ConfigTime.IsZero() {
+		ch <- prometheus.MustNewConstMetric(
+			configTime, prometheus.GaugeValue, float64(c.stats.Server.ConfigTime.Unix()),
+		)
+	}
 	for _, s := range c.stats.Server.IncomingQueries {
 		ch <- prometheus.MustNewConstMetric(
 			incomingQueries, prometheus.CounterValue, float64(s.Counter), s.Name,
@@ -185,6 +219,11 @@ func (c *serverCollector) Collect(ch chan<- prometheus.Metric) {
 			r := strings.TrimPrefix(s.Name, "Qry")
 			ch <- prometheus.MustNewConstMetric(
 				desc, prometheus.CounterValue, float64(s.Counter), r,
+			)
+		}
+		if desc, ok := serverMetricStats[s.Name]; ok {
+			ch <- prometheus.MustNewConstMetric(
+				desc, prometheus.CounterValue, float64(s.Counter),
 			)
 		}
 	}

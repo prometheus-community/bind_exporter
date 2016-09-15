@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"time"
 )
 
 // Client queries the BIND API, parses the response and returns stats in a
@@ -84,6 +85,8 @@ type Statistics struct {
 
 // Server represents BIND server statistics.
 type Server struct {
+	BootTime         time.Time
+	ConfigTime       time.Time
 	IncomingQueries  []Counter
 	IncomingRequests []Counter
 	NameServerStats  []Counter

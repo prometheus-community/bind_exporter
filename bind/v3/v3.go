@@ -77,6 +77,8 @@ func (c *Client) Stats(groups ...bind.StatisticGroup) (bind.Statistics, error) {
 			return s, err
 		}
 
+		s.Server.BootTime = stats.Server.BootTime
+		s.Server.ConfigTime = stats.Server.ConfigTime
 		for _, c := range stats.Server.Counters {
 			switch c.Type {
 			case opcode:

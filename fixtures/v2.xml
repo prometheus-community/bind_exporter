@@ -1616,8 +1616,8 @@
         </tasks>
       </taskmgr>
       <server>
-        <boot-time>2016-02-17T13:40:05Z</boot-time>
-        <current-time>2016-09-09T23:30:10Z</current-time>
+        <boot-time>2016-09-06T22:52:15Z</boot-time>
+        <current-time>2016-09-07T03:15:44Z</current-time>
         <requests>
           <opcode>
             <name>QUERY</name>
@@ -1776,7 +1776,7 @@
         </nsstat>
         <nsstat>
           <name>QryRecursion</name>
-          <counter>6094606514</counter>
+          <counter>60946</counter>
         </nsstat>
         <nsstat>
           <name>QryDuplicate</name>

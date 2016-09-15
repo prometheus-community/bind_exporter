@@ -74,8 +74,9 @@ func (c *Client) Stats(...bind.StatisticGroup) (bind.Statistics, error) {
 	if err := c.Get("/", &root); err != nil {
 		return s, err
 	}
-
 	stats := root.Bind.Statistics
+
+	s.Server.BootTime = stats.Server.BootTime
 	for _, t := range stats.Server.QueriesIn {
 		s.Server.IncomingQueries = append(s.Server.IncomingQueries, counter(t))
 	}

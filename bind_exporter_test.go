@@ -13,14 +13,19 @@ import (
 )
 
 var (
-	serverStats = []string{
+	serverStatsV2 = []string{
+		`bind_boot_time_seconds 1.473202335e+09`,
 		`bind_incoming_queries_total{type="A"} 128417`,
 		`bind_incoming_requests_total{opcode="QUERY"} 37634`,
 		`bind_responses_total{result="Success"} 29313`,
+		`bind_query_duplicates_total 216`,
 		`bind_query_errors_total{error="Dropped"} 237`,
-		`bind_query_errors_total{error="Duplicate"} 216`,
 		`bind_query_errors_total{error="Failure"} 2950`,
+		`bind_query_recursions_total 60946`,
 	}
+	serverStatsV3 = combine(serverStatsV2, []string{
+		`bind_config_time_seconds 1.473202712e+09`,
+	})
 	viewStats = []string{
 		`bind_resolver_cache_rrsets{type="A",view="_default"} 34324`,
 		`bind_resolver_queries_total{type="CNAME",view="_default"} 28`,
@@ -51,7 +56,8 @@ func TestBindExporterV2Client(t *testing.T) {
 		server:  newV2Server(),
 		groups:  []bind.StatisticGroup{bind.ServerStats, bind.ViewStats, bind.TaskStats},
 		version: "xml.v2",
-		include: combine([]string{`bind_up 1`}, serverStats, viewStats, taskStats),
+		include: combine([]string{`bind_up 1`}, serverStatsV2, viewStats, taskStats),
+		exclude: []string{`bind_config_time_seconds`},
 	}.run(t)
 }
 
@@ -60,7 +66,7 @@ func TestBindExporterV3Client(t *testing.T) {
 		server:  newV3Server(),
 		groups:  []bind.StatisticGroup{bind.ServerStats, bind.ViewStats, bind.TaskStats},
 		version: "xml.v3",
-		include: combine([]string{`bind_up 1`}, serverStats, viewStats, taskStats),
+		include: combine([]string{`bind_up 1`}, serverStatsV3, viewStats, taskStats),
 	}.run(t)
 }
 
@@ -70,13 +76,13 @@ func TestBindExporterAutomaticClient(t *testing.T) {
 			server:  newV2Server(),
 			groups:  []bind.StatisticGroup{bind.ServerStats},
 			version: "auto",
-			include: combine([]string{`bind_up 1`}, serverStats),
+			include: combine([]string{`bind_up 1`}, serverStatsV2),
 		},
 		{
 			server:  newV3Server(),
 			groups:  []bind.StatisticGroup{bind.ServerStats},
 			version: "auto",
-			include: combine([]string{`bind_up 1`}, serverStats),
+			include: combine([]string{`bind_up 1`}, serverStatsV3),
 		},
 	} {
 		test.run(t)
@@ -88,7 +94,7 @@ func TestBindExporterStatisticGroups(t *testing.T) {
 		server:  newV2Server(),
 		groups:  []bind.StatisticGroup{bind.ServerStats},
 		version: "xml.v2",
-		include: combine([]string{`bind_up 1`}, serverStats),
+		include: combine([]string{`bind_up 1`}, serverStatsV2),
 		exclude: combine(viewStats, taskStats, []string{`bind_tasks_running 0`, `bind_worker_threads 0`}),
 	}.run(t)
 }
@@ -98,7 +104,7 @@ func TestBindExporterBindFailure(t *testing.T) {
 		server:  httptest.NewServer(http.HandlerFunc(http.NotFound)),
 		version: "xml.v2",
 		include: []string{`bind_up 0`},
-		exclude: serverStats,
+		exclude: serverStatsV2,
 	}.run(t)
 }
 
@@ -120,12 +126,12 @@ func (b bindExporterTest) run(t *testing.T) {
 
 	for _, m := range b.include {
 		if !bytes.Contains(o, []byte(m)) {
-			t.Errorf("expected to find metric %q in output", m)
+			t.Errorf("expected to find metric %q in output\n%s", m, o)
 		}
 	}
 	for _, m := range b.exclude {
 		if bytes.Contains(o, []byte(m)) {
-			t.Errorf("expected to not find metric %q in output", m)
+			t.Errorf("expected to not find metric %q in output\n%s", m, o)
 		}
 	}
 }
