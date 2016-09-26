@@ -406,21 +406,28 @@ func (s *statisticGroups) String() string {
 
 // Set implements flag.Value.
 func (s *statisticGroups) Set(value string) error {
+	*s = []bind.StatisticGroup{}
 	if len(value) == 0 {
-		*s = []bind.StatisticGroup{}
 		return nil
 	}
+	var sg bind.StatisticGroup
 	for _, dt := range strings.Split(value, ",") {
 		switch dt {
 		case string(bind.ServerStats):
-			*s = append(*s, bind.ServerStats)
+			sg = bind.ServerStats
 		case string(bind.ViewStats):
-			*s = append(*s, bind.ViewStats)
+			sg = bind.ViewStats
 		case string(bind.TaskStats):
-			*s = append(*s, bind.TaskStats)
+			sg = bind.TaskStats
 		default:
 			return fmt.Errorf("unknown stats group %q", dt)
 		}
+		for _, existing := range *s {
+			if existing == sg {
+				return fmt.Errorf("duplicated stats group %q", sg)
+			}
+		}
+		*s = append(*s, sg)
 	}
 	return nil
 }
