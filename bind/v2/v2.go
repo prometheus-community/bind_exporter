@@ -78,13 +78,13 @@ func (c *Client) Stats(...bind.StatisticGroup) (bind.Statistics, error) {
 
 	s.Server.BootTime = stats.Server.BootTime
 	for _, t := range stats.Server.QueriesIn {
-		s.Server.IncomingQueries = append(s.Server.IncomingQueries, counter(t))
+		s.Server.IncomingQueries = append(s.Server.IncomingQueries, bind.Counter(t))
 	}
 	for _, t := range stats.Server.Requests {
-		s.Server.IncomingRequests = append(s.Server.IncomingRequests, counter(t))
+		s.Server.IncomingRequests = append(s.Server.IncomingRequests, bind.Counter(t))
 	}
 	for _, t := range stats.Server.NSStats {
-		s.Server.NameServerStats = append(s.Server.NameServerStats, counter(t))
+		s.Server.NameServerStats = append(s.Server.NameServerStats, bind.Counter(t))
 	}
 	for _, view := range stats.Views {
 		v := bind.View{
@@ -92,21 +92,14 @@ func (c *Client) Stats(...bind.StatisticGroup) (bind.Statistics, error) {
 			Cache: view.Cache,
 		}
 		for _, t := range view.Rdtype {
-			v.ResolverQueries = append(v.ResolverQueries, counter(t))
+			v.ResolverQueries = append(v.ResolverQueries, bind.Counter(t))
 		}
 		for _, t := range view.Resstat {
-			v.ResolverStats = append(v.ResolverStats, counter(t))
+			v.ResolverStats = append(v.ResolverStats, bind.Counter(t))
 		}
 		s.Views = append(s.Views, v)
 	}
 	s.TaskManager = stats.Taskmgr
 
 	return s, nil
-}
-
-func counter(c Counter) bind.Counter {
-	return bind.Counter{
-		Name:    c.Name,
-		Counter: c.Counter,
-	}
 }
