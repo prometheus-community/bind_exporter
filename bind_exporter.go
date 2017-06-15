@@ -24,6 +24,7 @@ import (
 
 const (
 	namespace = "bind"
+	exporter  = "bind_exporter"
 	resolver  = "resolver"
 )
 
@@ -448,14 +449,17 @@ func main() {
 	flag.Parse()
 
 	if *showVersion {
-		fmt.Fprintln(os.Stdout, version.Print("bind_exporter"))
+		fmt.Fprintln(os.Stdout, version.Print(exporter))
 		os.Exit(0)
 	}
-	log.Infoln("Starting bind_exporter", version.Info())
+	log.Infoln("Starting", exporter, version.Info())
 	log.Infoln("Build context", version.BuildContext())
 	log.Infoln("Configured to collect statistics", groups.String())
 
-	prometheus.MustRegister(NewExporter(*bindVersion, *bindURI, *bindTimeout, groups))
+	prometheus.MustRegister(
+		version.NewCollector(exporter),
+		NewExporter(*bindVersion, *bindURI, *bindTimeout, groups),
+	)
 	if *bindPidFile != "" {
 		procExporter := prometheus.NewProcessCollectorPIDFn(
 			func() (int, error) {
