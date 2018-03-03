@@ -22,7 +22,7 @@ bind_exporter next to BIND, so it's only necessary to open a port locally.
 
 ```
 statistics-channels {
-  inet 127.0.0.1 port 8080 allow { 127.0.0.1; };
+  inet 127.0.0.1 port 8053 allow { 127.0.0.1; };
 };
 ```
 
