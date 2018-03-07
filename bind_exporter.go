@@ -46,12 +46,12 @@ var (
 	)
 	incomingQueries = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "incoming_queries_total"),
-		"Number of incomming DNS queries.",
+		"Number of incoming DNS queries.",
 		[]string{"type"}, nil,
 	)
 	incomingRequests = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "incoming_requests_total"),
-		"Number of incomming DNS requests.",
+		"Number of incoming DNS requests.",
 		[]string{"opcode"}, nil,
 	)
 	resolverCache = prometheus.NewDesc(
@@ -79,7 +79,7 @@ var (
 		"Number of resolver response errors received.",
 		[]string{"view", "error"}, nil,
 	)
-	resolverDNSSECSucess = prometheus.NewDesc(
+	resolverDNSSECSuccess = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, resolver, "dnssec_validation_success_total"),
 		"Number of DNSSEC validation attempts succeeded.",
 		[]string{"view", "result"}, nil,
@@ -124,15 +124,15 @@ var (
 		"SERVFAIL":      resolverResponseErrors,
 		"FORMERR":       resolverResponseErrors,
 		"OtherError":    resolverResponseErrors,
-		"ValOk":         resolverDNSSECSucess,
-		"ValNegOk":      resolverDNSSECSucess,
+		"ValOk":         resolverDNSSECSuccess,
+		"ValNegOk":      resolverDNSSECSuccess,
 	}
 	serverQueryErrors = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "query_errors_total"),
 		"Number of query failures.",
 		[]string{"error"}, nil,
 	)
-	serverReponses = prometheus.NewDesc(
+	serverResponses = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "responses_total"),
 		"Number of responses sent.",
 		[]string{"result"}, nil,
@@ -140,12 +140,12 @@ var (
 	serverLabelStats = map[string]*prometheus.Desc{
 		"QryDropped":  serverQueryErrors,
 		"QryFailure":  serverQueryErrors,
-		"QrySuccess":  serverReponses,
-		"QryReferral": serverReponses,
-		"QryNxrrset":  serverReponses,
-		"QrySERVFAIL": serverReponses,
-		"QryFORMERR":  serverReponses,
-		"QryNXDOMAIN": serverReponses,
+		"QrySuccess":  serverResponses,
+		"QryReferral": serverResponses,
+		"QryNxrrset":  serverResponses,
+		"QrySERVFAIL": serverResponses,
+		"QryFORMERR":  serverResponses,
+		"QryNXDOMAIN": serverResponses,
 	}
 	serverMetricStats = map[string]*prometheus.Desc{
 		"QryDuplicate": prometheus.NewDesc(
@@ -189,7 +189,7 @@ func (c *serverCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- incomingQueries
 	ch <- incomingRequests
 	ch <- serverQueryErrors
-	ch <- serverReponses
+	ch <- serverResponses
 	for _, desc := range serverMetricStats {
 		ch <- desc
 	}
@@ -241,7 +241,7 @@ func newViewCollector(s *bind.Statistics) prometheus.Collector {
 
 // Describe implements prometheus.Collector.
 func (c *viewCollector) Describe(ch chan<- *prometheus.Desc) {
-	ch <- resolverDNSSECSucess
+	ch <- resolverDNSSECSuccess
 	ch <- resolverQueries
 	ch <- resolverQueryDuration
 	ch <- resolverQueryErrors
