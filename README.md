@@ -12,6 +12,8 @@ make
 ./bind_exporter [flags]
 ```
 
+Grafana Dashboard: https://grafana.com/dashboards/1666
+
 ## Troubleshooting
 
 Make sure BIND was built with libxml2 support. You can check with the following
