@@ -8,6 +8,8 @@ Export BIND(named/dns) v9+ service metrics to Prometheus.
 ## Getting started
 
 ```bash
+go get github.com/digitalocean/bind_exporter
+cd $GOPATH/src/github.com/digitalocean/bind_exporter
 make
 ./bind_exporter [flags]
 ```
