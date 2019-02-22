@@ -14,8 +14,8 @@ import (
 
 	"github.com/digitalocean/bind_exporter/bind"
 	"github.com/digitalocean/bind_exporter/bind/auto"
-	v2 "github.com/digitalocean/bind_exporter/bind/v2"
-	v3 "github.com/digitalocean/bind_exporter/bind/v3"
+	"github.com/digitalocean/bind_exporter/bind/v2"
+	"github.com/digitalocean/bind_exporter/bind/v3"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/log"
