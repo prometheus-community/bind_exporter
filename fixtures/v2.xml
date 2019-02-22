@@ -1716,7 +1716,7 @@
         </nsstat>
         <nsstat>
           <name>XfrRej</name>
-          <counter>0</counter>
+          <counter>3</counter>
         </nsstat>
         <nsstat>
           <name>UpdateRej</name>
@@ -1876,11 +1876,11 @@
         </zonestat>
         <zonestat>
           <name>XfrSuccess</name>
-          <counter>0</counter>
+          <counter>25</counter>
         </zonestat>
         <zonestat>
           <name>XfrFail</name>
-          <counter>0</counter>
+          <counter>1</counter>
         </zonestat>
         <resstat>
           <name>Mismatch</name>

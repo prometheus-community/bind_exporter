@@ -90,6 +90,7 @@ type Server struct {
 	IncomingQueries  []Counter
 	IncomingRequests []Counter
 	NameServerStats  []Counter
+	ZoneStatistics   []Counter
 }
 
 // View represents statistics for a single BIND view.

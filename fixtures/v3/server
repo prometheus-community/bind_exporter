@@ -37,7 +37,7 @@
       <counter name="ReqTCP">0</counter>
       <counter name="AuthQryRej">0</counter>
       <counter name="RecQryRej">0</counter>
-      <counter name="XfrRej">0</counter>
+      <counter name="XfrRej">3</counter>
       <counter name="UpdateRej">0</counter>
       <counter name="Response">156</counter>
       <counter name="TruncatedResp">0</counter>
@@ -92,8 +92,8 @@
       <counter name="AXFRReqv6">0</counter>
       <counter name="IXFRReqv4">0</counter>
       <counter name="IXFRReqv6">0</counter>
-      <counter name="XfrSuccess">0</counter>
-      <counter name="XfrFail">0</counter>
+      <counter name="XfrSuccess">25</counter>
+      <counter name="XfrFail">1</counter>
     </counters>
     <counters type="resstat"/>
   </server>
