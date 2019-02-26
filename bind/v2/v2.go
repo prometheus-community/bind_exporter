@@ -86,6 +86,9 @@ func (c *Client) Stats(...bind.StatisticGroup) (bind.Statistics, error) {
 	for _, t := range stats.Server.NSStats {
 		s.Server.NameServerStats = append(s.Server.NameServerStats, bind.Counter(t))
 	}
+	for _, t := range stats.Server.ZoneStats {
+		s.Server.ZoneStatistics = append(s.Server.ZoneStatistics, bind.Counter(t))
+	}
 	for _, view := range stats.Views {
 		v := bind.View{
 			Name:  view.Name,

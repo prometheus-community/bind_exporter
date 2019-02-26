@@ -22,6 +22,9 @@ var (
 		`bind_query_errors_total{error="Dropped"} 237`,
 		`bind_query_errors_total{error="Failure"} 2950`,
 		`bind_query_recursions_total 60946`,
+		`bind_zone_transfer_rejected_total 3`,
+		`bind_zone_transfer_success_total 25`,
+		`bind_zone_transfer_failure_total 1`,
 	}
 	serverStatsV3 = combine(serverStatsV2, []string{
 		`bind_config_time_seconds 1.473202712e+09`,

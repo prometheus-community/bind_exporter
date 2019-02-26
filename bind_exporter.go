@@ -158,6 +158,21 @@ var (
 			"Number of queries causing recursion.",
 			nil, nil,
 		),
+		"XfrRej": prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "zone_transfer_rejected_total"),
+			"Number of rejected zone transfers.",
+			nil, nil,
+		),
+		"XfrSuccess": prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "zone_transfer_success_total"),
+			"Number of successful zone transfers.",
+			nil, nil,
+		),
+		"XfrFail": prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "zone_transfer_failure_total"),
+			"Number of failed zone transfers.",
+			nil, nil,
+		),
 	}
 	tasksRunning = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "tasks_running"),
@@ -222,6 +237,13 @@ func (c *serverCollector) Collect(ch chan<- prometheus.Metric) {
 				desc, prometheus.CounterValue, float64(s.Counter), r,
 			)
 		}
+		if desc, ok := serverMetricStats[s.Name]; ok {
+			ch <- prometheus.MustNewConstMetric(
+				desc, prometheus.CounterValue, float64(s.Counter),
+			)
+		}
+	}
+	for _, s := range c.stats.Server.ZoneStatistics {
 		if desc, ok := serverMetricStats[s.Name]; ok {
 			ch <- prometheus.MustNewConstMetric(
 				desc, prometheus.CounterValue, float64(s.Counter),
