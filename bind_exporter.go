@@ -459,7 +459,7 @@ func main() {
 	var (
 		bindURI       = flag.String("bind.stats-url", "http://localhost:8053/", "HTTP XML API address of an Bind server.")
 		bindTimeout   = flag.Duration("bind.timeout", 10*time.Second, "Timeout for trying to get stats from Bind.")
-		bindPidFile   = flag.String("bind.pid-file", "", "Path to Bind's pid file to export process information.")
+		bindPidFile   = flag.String("bind.pid-file", "/run/named/named.pid", "Path to Bind's pid file to export process information.")
 		bindVersion   = flag.String("bind.stats-version", "auto", "BIND statistics version. Can be detected automatically. Available: [xml.v2, xml.v3, auto]")
 		showVersion   = flag.Bool("version", false, "Print version information.")
 		listenAddress = flag.String("web.listen-address", ":9119", "Address to listen on for web interface and telemetry.")
