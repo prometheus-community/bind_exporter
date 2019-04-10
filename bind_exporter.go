@@ -465,7 +465,7 @@ func main() {
 		listenAddress = flag.String("web.listen-address", ":9119", "Address to listen on for web interface and telemetry.")
 		metricsPath   = flag.String("web.telemetry-path", "/metrics", "Path under which to expose metrics.")
 
-		groups = statisticGroups{bind.ServerStats, bind.ViewStats}
+		groups = statisticGroups{bind.ServerStats, bind.ViewStats, bind.TaskStats}
 	)
 	flag.Var(&groups, "bind.stats-groups", "Comma-separated list of statistics to collect. Available: [server, view, tasks]")
 	flag.Parse()
