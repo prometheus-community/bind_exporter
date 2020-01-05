@@ -1,3 +1,16 @@
+// Copyright 2020 The Prometheus Authors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package main
 
 import (
@@ -12,12 +25,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/digitalocean/bind_exporter/bind"
-	"github.com/digitalocean/bind_exporter/bind/auto"
-	"github.com/digitalocean/bind_exporter/bind/v2"
-	"github.com/digitalocean/bind_exporter/bind/v3"
+	"github.com/prometheus-community/bind_exporter/bind"
+	"github.com/prometheus-community/bind_exporter/bind/auto"
+	"github.com/prometheus-community/bind_exporter/bind/v2"
+	"github.com/prometheus-community/bind_exporter/bind/v3"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/log"
 	"github.com/prometheus/common/version"
 )
@@ -483,8 +497,8 @@ func main() {
 		NewExporter(*bindVersion, *bindURI, *bindTimeout, groups),
 	)
 	if *bindPidFile != "" {
-		procExporter := prometheus.NewProcessCollectorPIDFn(
-			func() (int, error) {
+		procExporter := prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{
+			PidFn: func() (int, error) {
 				content, err := ioutil.ReadFile(*bindPidFile)
 				if err != nil {
 					return 0, fmt.Errorf("Can't read pid file: %s", err)
@@ -494,12 +508,14 @@ func main() {
 					return 0, fmt.Errorf("Can't parse pid file: %s", err)
 				}
 				return value, nil
-			}, namespace)
+			},
+			Namespace: namespace,
+		})
 		prometheus.MustRegister(procExporter)
 	}
 
 	log.Info("Starting Server: ", *listenAddress)
-	http.Handle(*metricsPath, prometheus.Handler())
+	http.Handle(*metricsPath, promhttp.Handler())
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`<html>
              <head><title>Bind Exporter</title></head>
