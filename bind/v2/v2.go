@@ -64,7 +64,7 @@ type Zone struct {
 
 type Counter struct {
 	Name    string `xml:"name"`
-	Counter uint   `xml:"counter"`
+	Counter uint64 `xml:"counter"`
 }
 
 // Client implements bind.Client and can be used to query a BIND v2 API.
