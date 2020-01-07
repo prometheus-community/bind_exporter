@@ -123,28 +123,28 @@ type TaskManager struct {
 // Counter represents a single counter value.
 type Counter struct {
 	Name    string `xml:"name,attr"`
-	Counter uint   `xml:",chardata"`
+	Counter uint64 `xml:",chardata"`
 }
 
 // Gauge represents a single gauge value.
 type Gauge struct {
 	Name  string `xml:"name"`
-	Gauge int    `xml:"counter"`
+	Gauge int64  `xml:"counter"`
 }
 
 // Task represents a single running task.
 type Task struct {
 	ID         string `xml:"id"`
 	Name       string `xml:"name"`
-	Quantum    uint   `xml:"quantum"`
-	References uint   `xml:"references"`
+	Quantum    uint64 `xml:"quantum"`
+	References uint64 `xml:"references"`
 	State      string `xml:"state"`
 }
 
 // ThreadModel contains task and worker information.
 type ThreadModel struct {
 	Type           string `xml:"type"`
-	WorkerThreads  uint   `xml:"worker-threads"`
-	DefaultQuantum uint   `xml:"default-quantum"`
-	TasksRunning   uint   `xml:"tasks-running"`
+	WorkerThreads  uint64 `xml:"worker-threads"`
+	DefaultQuantum uint64 `xml:"default-quantum"`
+	TasksRunning   uint64 `xml:"tasks-running"`
 }

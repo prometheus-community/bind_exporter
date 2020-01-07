@@ -4,6 +4,8 @@
 
 ### Changes
 
+* [BUGFIX] Fix parsing on 32bit systems. #58
+
 # v0.2.0 / unreleased
 
 - [CHANGE] Rename label in `bind_incoming_requests_total` from `name` to `opcode`
