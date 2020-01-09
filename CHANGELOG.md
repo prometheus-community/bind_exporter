@@ -1,16 +1,12 @@
 ## master / unreleased
   
-### **Breaking changes**
-
-### Changes
-
-# v0.3.0 / 2020-01-08
+## 0.3.0 / 2020-01-08
 
 * [FEATURE] Support zone stats, enable some initial zone transfer metrics #49
 * [ENHANCEMENT] Better flag defaults #50
 * [BUGFIX] Fix parsing on 32bit systems. #58
 
-# v0.2.0 / unreleased
+## 0.2.0 / 2017-08-28
 
 * [CHANGE] Rename label in `bind_incoming_requests_total` from `name` to `opcode`
 * [CHANGE] Rename flag `-bind.statsuri` to `-bind.stats-url`
