@@ -30,6 +30,34 @@ jobs:
     - run: sudo pip install codespell
     - run: codespell --skip=".git,./vendor,ttar,go.mod,go.sum,*pem" -L uint,packages\',uptodate
 
+  publish_master:
+    executor: golang
+
+    steps:
+    - prometheus/setup_build_environment
+    - prometheus/publish_images:
+        registry: docker.io
+        organization: prometheuscommunity
+        login_variable: DOCKER_LOGIN
+        password_variable: DOCKER_PASSWORD
+
+  publish_release:
+    executor: golang
+
+    steps:
+    - prometheus/setup_build_environment
+    - run: promu crossbuild tarballs
+    - run: promu checksum .tarballs
+    - run: promu release .tarballs
+    - store_artifacts:
+        path: .tarballs
+        destination: releases
+    - prometheus/publish_release_images:
+        registry: docker.io
+        organization: prometheuscommunity
+        login_variable: DOCKER_LOGIN
+        password_variable: DOCKER_PASSWORD
+
 workflows:
   version: 2
   bind_exporter:
@@ -47,7 +75,7 @@ workflows:
         filters:
           tags:
             only: /.*/
-    - prometheus/publish_master:
+    - publish_master:
         context: org-context
         requires:
         - test
@@ -55,7 +83,7 @@ workflows:
         filters:
           branches:
             only: master
-    - prometheus/publish_release:
+    - publish_release:
         context: org-context
         requires:
         - test
