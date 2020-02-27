@@ -1,5 +1,7 @@
 ## master / unreleased
   
+* [BUGFIX] Use uint64 for counters in v3 xml. #70
+
 ## 0.3.0 / 2020-01-08
 
 * [FEATURE] Support zone stats, enable some initial zone transfer metrics #49

@@ -64,7 +64,7 @@ type Counters struct {
 
 type Counter struct {
 	Name    string `xml:"name"`
-	Counter int64  `xml:"counter"`
+	Counter uint64 `xml:"counter"`
 }
 
 // Client implements bind.Client and can be used to query a BIND v3 API.
