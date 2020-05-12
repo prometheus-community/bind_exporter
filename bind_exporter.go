@@ -187,6 +187,11 @@ var (
 			"Number of failed zone transfers.",
 			nil, nil,
 		),
+		"RecursClients": prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "recursive_clients"),
+			"Number of current recursive clients.",
+			nil, nil,
+		),
 	}
 	tasksRunning = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "tasks_running"),

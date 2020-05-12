@@ -38,6 +38,7 @@ var (
 		`bind_zone_transfer_rejected_total 3`,
 		`bind_zone_transfer_success_total 25`,
 		`bind_zone_transfer_failure_total 1`,
+		`bind_recursive_clients 76`,
 	}
 	serverStatsV3 = combine(serverStatsV2, []string{
 		`bind_config_time_seconds 1.473202712e+09`,

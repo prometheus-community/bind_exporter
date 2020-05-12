@@ -1819,6 +1819,10 @@
           <counter>0</counter>
         </nsstat>
         <nsstat>
+          <name>RecursClients</name>
+          <counter>76</counter>
+        </nsstat>
+        <nsstat>
           <name>RPZRewrites</name>
           <counter>0</counter>
         </nsstat>
