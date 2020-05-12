@@ -188,7 +188,7 @@ var (
 			nil, nil,
 		),
 		"RecursClients": prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, "", "recursive_clients_total"),
+			prometheus.BuildFQName(namespace, "", "recursive_clients"),
 			"Number of current recursive clients.",
 			nil, nil,
 		),
