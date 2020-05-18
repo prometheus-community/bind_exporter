@@ -1,3 +1,6 @@
+go:
+    # This must match .circle/config.yml.
+    version: 1.14
 repository:
     path: github.com/prometheus-community/bind_exporter
 build:
