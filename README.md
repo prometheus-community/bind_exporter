@@ -23,7 +23,7 @@ docker pull prometheuscommunity/bind-exporter:v0.3.0
 ```
 2. Run in a Docker container (as daemon), use `--network host` when communicating with `named` via `localhost`:
 ```bash
-docker run -d --network host prometheuscommunity/bind-exporter:v0.3.0 
+docker run -d --network host prometheuscommunity/bind-exporter:v0.3.0
 ```
 
 ### Examples
@@ -35,7 +35,7 @@ docker run -d prometheuscommunity/bind-exporter:v0.3.0 -bind.stats-url http://<I
 
 ## Other resources
 
-Grafana Dashboard: https://grafana.com/dashboards/1666
+Grafana Dashboard: https://grafana.com/dashboards/12309
 
 ## Troubleshooting
 
