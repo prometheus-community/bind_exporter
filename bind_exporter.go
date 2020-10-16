@@ -25,6 +25,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus-community/bind_exporter/bind"
 	"github.com/prometheus-community/bind_exporter/bind/auto"
 	"github.com/prometheus-community/bind_exporter/bind/v2"
@@ -32,7 +33,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/prometheus/common/log"
+	"github.com/prometheus/common/promlog"
 	"github.com/prometheus/common/version"
 )
 
@@ -43,6 +44,8 @@ const (
 )
 
 var (
+	logger = promlog.New(&promlog.Config{})
+
 	up = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "up"),
 		"Was the Bind instance query successful?",
@@ -322,7 +325,7 @@ func (c *viewCollector) Collect(ch chan<- prometheus.Metric) {
 				resolverQueryDuration, count, math.NaN(), buckets, v.Name,
 			)
 		} else {
-			log.Warn("Error parsing RTT:", err)
+			level.Warn(logger).Log("msg", "Error parsing RTT", "err", err)
 		}
 	}
 }
@@ -407,7 +410,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 		}
 		status = 1
 	} else {
-		log.Error("Couldn't retrieve BIND stats: ", err)
+		level.Error(logger).Log("msg", "Couldn't retrieve BIND stats", "err", err)
 	}
 	ch <- prometheus.MustNewConstMetric(up, prometheus.GaugeValue, status)
 }
@@ -443,7 +446,7 @@ func (s *statisticGroups) String() string {
 	for _, g := range *s {
 		groups = append(groups, string(g))
 	}
-	return fmt.Sprintf("%q", strings.Join(groups, ","))
+	return strings.Join(groups, ",")
 }
 
 // Set implements flag.Value.
@@ -493,9 +496,10 @@ func main() {
 		fmt.Fprintln(os.Stdout, version.Print(exporter))
 		os.Exit(0)
 	}
-	log.Infoln("Starting", exporter, version.Info())
-	log.Infoln("Build context", version.BuildContext())
-	log.Infoln("Configured to collect statistics", groups.String())
+
+	level.Info(logger).Log("msg", "Starting node_exporter", "version", version.Info())
+	level.Info(logger).Log("msg", "Build context", "build_context", version.BuildContext())
+	level.Info(logger).Log("msg", "Collectors enabled", "collectors", groups.String())
 
 	prometheus.MustRegister(
 		version.NewCollector(exporter),
@@ -519,7 +523,7 @@ func main() {
 		prometheus.MustRegister(procExporter)
 	}
 
-	log.Info("Starting Server: ", *listenAddress)
+	level.Info(logger).Log("msg", "Listening on", "address", *listenAddress)
 	http.Handle(*metricsPath, promhttp.Handler())
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`<html>
@@ -530,5 +534,8 @@ func main() {
              </body>
              </html>`))
 	})
-	log.Fatal(http.ListenAndServe(*listenAddress, nil))
+	if err := http.ListenAndServe(*listenAddress, nil); err != nil {
+		level.Error(logger).Log("err", err)
+		os.Exit(1)
+	}
 }
