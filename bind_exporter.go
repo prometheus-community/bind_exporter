@@ -14,7 +14,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"math"
@@ -30,11 +29,11 @@ import (
 	"github.com/prometheus-community/bind_exporter/bind/auto"
 	"github.com/prometheus-community/bind_exporter/bind/v2"
 	"github.com/prometheus-community/bind_exporter/bind/v3"
-
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/promlog"
 	"github.com/prometheus/common/version"
+	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 const (
@@ -479,25 +478,39 @@ func (s *statisticGroups) Set(value string) error {
 
 func main() {
 	var (
-		bindURI       = flag.String("bind.stats-url", "http://localhost:8053/", "HTTP XML API address of an Bind server.")
-		bindTimeout   = flag.Duration("bind.timeout", 10*time.Second, "Timeout for trying to get stats from Bind.")
-		bindPidFile   = flag.String("bind.pid-file", "/run/named/named.pid", "Path to Bind's pid file to export process information.")
-		bindVersion   = flag.String("bind.stats-version", "auto", "BIND statistics version. Can be detected automatically. Available: [xml.v2, xml.v3, auto]")
-		showVersion   = flag.Bool("version", false, "Print version information.")
-		listenAddress = flag.String("web.listen-address", ":9119", "Address to listen on for web interface and telemetry.")
-		metricsPath   = flag.String("web.telemetry-path", "/metrics", "Path under which to expose metrics.")
+		bindURI = kingpin.Flag("bind.stats-url",
+			"HTTP XML API address of BIND server",
+		).Default("http://localhost:8053/").String()
+		bindTimeout = kingpin.Flag("bind.timeout",
+			"Timeout for trying to get stats from BIND server",
+		).Default("10s").Duration()
+		bindPidFile = kingpin.Flag("bind.pid-file",
+			"Path to BIND's pid file to export process information",
+		).Default("/run/named/named.pid").String()
+		bindVersion = kingpin.Flag("bind.stats-version",
+			"BIND statistics version. Can be detected automatically.",
+		).Default("auto").Enum("xml.v2", "xml.v3", "auto")
+		listenAddress = kingpin.Flag("web.listen-address",
+			"Address to listen on for web interface and telemetry",
+		).Default(":9119").String()
+		metricsPath = kingpin.Flag(
+			"web.telemetry-path", "Path under which to expose metrics",
+		).Default("/metrics").String()
 
-		groups = statisticGroups{bind.ServerStats, bind.ViewStats, bind.TaskStats}
+		groups statisticGroups
 	)
-	flag.Var(&groups, "bind.stats-groups", "Comma-separated list of statistics to collect. Available: [server, view, tasks]")
-	flag.Parse()
 
-	if *showVersion {
-		fmt.Fprintln(os.Stdout, version.Print(exporter))
-		os.Exit(0)
-	}
+	kingpin.Flag("bind.stats-groups",
+		"Comma-separated list of statistics to collect",
+	).Default((&statisticGroups{
+		bind.ServerStats, bind.ViewStats, bind.TaskStats,
+	}).String()).SetValue(&groups)
 
-	level.Info(logger).Log("msg", "Starting node_exporter", "version", version.Info())
+	kingpin.Version(version.Print(exporter))
+	kingpin.HelpFlag.Short('h')
+	kingpin.Parse()
+
+	level.Info(logger).Log("msg", "Starting bind_exporter", "version", version.Info())
 	level.Info(logger).Log("msg", "Build context", "build_context", version.BuildContext())
 	level.Info(logger).Log("msg", "Collectors enabled", "collectors", groups.String())
 

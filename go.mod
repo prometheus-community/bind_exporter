@@ -8,4 +8,5 @@ require (
 	github.com/prometheus/client_golang v1.6.0
 	github.com/prometheus/common v0.10.0
 	golang.org/x/sys v0.0.0-20200515095857-1151b9dac4a9 // indirect
+	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 )
