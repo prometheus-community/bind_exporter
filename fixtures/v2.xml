@@ -8,6 +8,11 @@
           <name>_default</name>
           <zones>
             <zone>
+              <name>TEST_ZONE</name>
+              <rdataclass>IN</rdataclass>
+              <serial>123</serial>
+            </zone>
+            <zone>
               <name>0.in-addr.arpa/IN</name>
               <rdataclass>IN</rdataclass>
               <serial>1</serial>

@@ -27,6 +27,8 @@ const (
 	StatusPath = "/xml/v3/status"
 	// TasksPath is the HTTP path of the v3 tasks resource.
 	TasksPath = "/xml/v3/tasks"
+	// ZonesPath is the HTTP path of the v3 zones resource.
+	ZonesPath = "/xml/v3/zones"
 
 	nsstat   = "nsstat"
 	opcode   = "opcode"
@@ -44,6 +46,10 @@ type Statistics struct {
 	Views     []View           `xml:"views>view"`
 }
 
+type ZoneStatistics struct {
+	ZoneViews []ZoneView `xml:"views>view"`
+}
+
 type Server struct {
 	BootTime   time.Time  `xml:"boot-time"`
 	ConfigTime time.Time  `xml:"config-time"`
@@ -54,7 +60,11 @@ type View struct {
 	Name     string       `xml:"name,attr"`
 	Cache    []bind.Gauge `xml:"cache>rrset"`
 	Counters []Counters   `xml:"counters"`
-	Zones    struct{}     `xml:"zones>zone"`
+}
+
+type ZoneView struct {
+	Name  string        `xml:"name,attr"`
+	Zones []ZoneCounter `xml:"zones>zone"`
 }
 
 type Counters struct {
@@ -65,6 +75,12 @@ type Counters struct {
 type Counter struct {
 	Name    string `xml:"name"`
 	Counter uint64 `xml:"counter"`
+}
+
+type ZoneCounter struct {
+	Name       string `xml:"name,attr"`
+	Rdataclass string `xml:"rdataclass,attr"`
+	Serial     uint64 `xml:"serial"`
 }
 
 // Client implements bind.Client and can be used to query a BIND v3 API.
@@ -86,6 +102,7 @@ func (c *Client) Stats(groups ...bind.StatisticGroup) (bind.Statistics, error) {
 	}
 
 	var stats Statistics
+	var zonestats ZoneStatistics
 	if m[bind.ServerStats] || m[bind.ViewStats] {
 		if err := c.Get(ServerPath, &stats); err != nil {
 			return s, err
@@ -122,6 +139,28 @@ func (c *Client) Stats(groups ...bind.StatisticGroup) (bind.Statistics, error) {
 			s.Views = append(s.Views, v)
 		}
 	}
+
+	if err := c.Get(ZonesPath, &zonestats); err != nil {
+		return s, err
+	}
+
+	for _, view := range zonestats.ZoneViews {
+		v := bind.ZoneView{
+			Name: view.Name,
+		}
+		for _, zone := range view.Zones {
+			if zone.Rdataclass != "IN" {
+				continue
+			}
+			z := bind.ZoneCounter{
+				Name:   zone.Name,
+				Serial: zone.Serial,
+			}
+			v.ZoneData = append(v.ZoneData, z)
+		}
+		s.ZoneViews = append(s.ZoneViews, v)
+	}
+
 	if m[bind.TaskStats] {
 		if err := c.Get(TasksPath, &stats); err != nil {
 			return s, err

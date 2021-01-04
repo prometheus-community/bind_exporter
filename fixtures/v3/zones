@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="/bind9.xsl"?>
+<statistics version="3.6">
+  <views>
+    <view name="_default">
+      <zones>
+        <zone name="TEST_ZONE" rdataclass="IN">
+          <type>builtin</type>
+          <serial>123</serial>
+        </zone>
+      </zones>
+    </view>
+  </views>
+</statistics>
