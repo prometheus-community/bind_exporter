@@ -1,12 +1,12 @@
 go:
     # This must match .circle/config.yml.
-    version: 1.14
+    version: 1.15
 repository:
     path: github.com/prometheus-community/bind_exporter
 build:
     binaries:
         - name: bind_exporter
-    flags: -mod=vendor -a -tags 'netgo static_build'
+    flags: -a -tags 'netgo static_build'
     ldflags: |
         -X github.com/prometheus/common/version.Version={{.Version}}
         -X github.com/prometheus/common/version.Revision={{.Revision}}
