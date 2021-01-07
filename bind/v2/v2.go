@@ -53,13 +53,13 @@ type View struct {
 	Cache   []bind.Gauge `xml:"cache>rrset"`
 	Rdtype  []Counter    `xml:"rdtype"`
 	Resstat []Counter    `xml:"resstat"`
-	Zones   []Counter    `xml:"zones>zone"`
+	Zones   []Zone       `xml:"zones>zone"`
 }
 
 type Zone struct {
 	Name       string `xml:"name"`
 	Rdataclass string `xml:"rdataclass"`
-	Serial     string `xml:"serial"`
+	Serial     uint64 `xml:"serial"`
 }
 
 type Counter struct {
@@ -107,12 +107,26 @@ func (c *Client) Stats(...bind.StatisticGroup) (bind.Statistics, error) {
 			Name:  view.Name,
 			Cache: view.Cache,
 		}
+		zv := bind.ZoneView{
+			Name: view.Name,
+		}
 		for _, t := range view.Rdtype {
 			v.ResolverQueries = append(v.ResolverQueries, bind.Counter(t))
 		}
 		for _, t := range view.Resstat {
 			v.ResolverStats = append(v.ResolverStats, bind.Counter(t))
 		}
+		for _, zone := range view.Zones {
+			if zone.Rdataclass != "IN" {
+				continue
+			}
+			z := bind.ZoneCounter{
+				Name:   zone.Name,
+				Serial: zone.Serial,
+			}
+			zv.ZoneData = append(zv.ZoneData, z)
+		}
+		s.ZoneViews = append(s.ZoneViews, zv)
 		s.Views = append(s.Views, v)
 	}
 	s.TaskManager = stats.Taskmgr
