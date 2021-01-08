@@ -205,6 +205,11 @@ var (
 		"Total number of available worker threads.",
 		nil, nil,
 	)
+	zoneSerial = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "zone_serial"),
+		"Zone serial number.",
+		[]string{"view", "zone_name"}, nil,
+	)
 )
 
 type collectorConstructor func(*bind.Statistics) prometheus.Collector
@@ -325,6 +330,14 @@ func (c *viewCollector) Collect(ch chan<- prometheus.Metric) {
 			)
 		} else {
 			level.Warn(logger).Log("msg", "Error parsing RTT", "err", err)
+		}
+	}
+
+	for _, v := range c.stats.ZoneViews {
+		for _, z := range v.ZoneData {
+			ch <- prometheus.MustNewConstMetric(
+				zoneSerial, prometheus.CounterValue, float64(z.Serial), v.Name, z.Name,
+			)
 		}
 	}
 }

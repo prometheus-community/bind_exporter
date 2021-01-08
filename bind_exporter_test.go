@@ -61,6 +61,7 @@ var (
 		`bind_resolver_query_duration_seconds_bucket{view="_default",le="0.8"} 187375`,
 		`bind_resolver_query_duration_seconds_bucket{view="_default",le="1.6"} 188409`,
 		`bind_resolver_query_duration_seconds_bucket{view="_default",le="+Inf"} 227755`,
+		`bind_zone_serial{view="_default",zone_name="TEST_ZONE"} 123`,
 	}
 	taskStats = []string{
 		`bind_tasks_running 8`,
@@ -195,6 +196,7 @@ func newV3Server() *httptest.Server {
 		"/xml/v3/server": "fixtures/v3/server",
 		"/xml/v3/status": "fixtures/v3/status",
 		"/xml/v3/tasks":  "fixtures/v3/tasks",
+		"/xml/v3/zones":  "fixtures/v3/zones",
 	}
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if f, ok := m[r.RequestURI]; ok {

@@ -89,6 +89,7 @@ const (
 type Statistics struct {
 	Server      Server
 	Views       []View
+	ZoneViews   []ZoneView
 	TaskManager TaskManager
 }
 
@@ -110,6 +111,12 @@ type View struct {
 	ResolverQueries []Counter
 }
 
+// View represents statistics for a single BIND zone view.
+type ZoneView struct {
+	Name     string
+	ZoneData []ZoneCounter
+}
+
 // TaskManager contains information about all running tasks.
 type TaskManager struct {
 	Tasks       []Task      `xml:"tasks>task"`
@@ -120,6 +127,12 @@ type TaskManager struct {
 type Counter struct {
 	Name    string `xml:"name,attr"`
 	Counter uint64 `xml:",chardata"`
+}
+
+// Counter represents a single zone counter value.
+type ZoneCounter struct {
+	Name   string
+	Serial uint64
 }
 
 // Gauge represents a single gauge value.
