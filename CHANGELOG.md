@@ -1,6 +1,13 @@
 ## master / unreleased
+
+## 0.4.0 / 2021-01-14
   
-* [BUGFIX] Use uint64 for counters in v3 xml. #70
+* [CHANGE] Replace legacy common/log with promlog #85
+* [FEATURE] Add current recursive clients metric #74
+* [FEATURE] Add zone serial numbers as metrics #91
+* [FEATURE] Add TLS and basic authentication #94
+* [BUGFIX] Use uint64 for counters in v3 xml #70
+* [BUGFIX] Fix Gauge type for large gauges #90
 
 ## 0.3.0 / 2020-01-08
 
