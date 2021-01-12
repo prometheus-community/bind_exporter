@@ -182,6 +182,10 @@
           <name>NXDOMAIN</name>
           <counter>1</counter>
         </rrset>
+        <rrset>
+          <name>#A</name>
+          <counter>18446744073709551603</counter>
+        </rrset>
       </cache>
       <counters type="adbstat">
         <counter name="nentries">1021</counter>
