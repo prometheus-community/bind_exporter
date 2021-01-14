@@ -33,6 +33,14 @@ Run `bind_exporter` in a Docker container and communicate with `named` on non-de
 docker run -d prometheuscommunity/bind-exporter:v0.3.0 -bind.stats-url http://<IP/hostname>:8053
 ```
 
+## TLS and basic authentication
+
+The Bind Exporter supports TLS and basic authentication.
+
+To use TLS and/or basic authentication, you need to pass a configuration file
+using the `--web.config.file` parameter. The format of the file is described
+[in the exporter-toolkit repository](https://github.com/prometheus/exporter-toolkit/blob/master/docs/web-configuration.md).
+
 ## Other resources
 
 Grafana Dashboard: https://grafana.com/dashboards/12309

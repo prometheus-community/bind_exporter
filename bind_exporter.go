@@ -33,6 +33,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/promlog"
 	"github.com/prometheus/common/version"
+	"github.com/prometheus/exporter-toolkit/web"
+	webflag "github.com/prometheus/exporter-toolkit/web/kingpinflag"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -503,6 +505,7 @@ func main() {
 		bindVersion = kingpin.Flag("bind.stats-version",
 			"BIND statistics version. Can be detected automatically.",
 		).Default("auto").Enum("xml.v2", "xml.v3", "auto")
+		webConfig     = webflag.AddFlags(kingpin.CommandLine)
 		listenAddress = kingpin.Flag("web.listen-address",
 			"Address to listen on for web interface and telemetry",
 		).Default(":9119").String()
@@ -560,7 +563,8 @@ func main() {
              </body>
              </html>`))
 	})
-	if err := http.ListenAndServe(*listenAddress, nil); err != nil {
+	srv := &http.Server{Addr: *listenAddress}
+	if err := web.ListenAndServe(srv, *webConfig, logger); err != nil {
 		level.Error(logger).Log("err", err)
 		os.Exit(1)
 	}
