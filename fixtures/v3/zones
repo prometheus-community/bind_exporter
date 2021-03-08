@@ -8,6 +8,10 @@
           <type>builtin</type>
           <serial>123</serial>
         </zone>
+        <zone name="FAULT_TEST_ZONE" rdataclass="IN">
+          <type>builtin</type>
+          <serial>-</serial>
+        </zone>
       </zones>
     </view>
   </views>

@@ -13,6 +13,11 @@
               <serial>123</serial>
             </zone>
             <zone>
+              <name>FAULT_TEST_ZONE</name>
+              <rdataclass>IN</rdataclass>
+              <serial>-</serial>
+            </zone>
+            <zone>
               <name>0.in-addr.arpa/IN</name>
               <rdataclass>IN</rdataclass>
               <serial>1</serial>

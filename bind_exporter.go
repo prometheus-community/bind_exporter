@@ -337,9 +337,15 @@ func (c *viewCollector) Collect(ch chan<- prometheus.Metric) {
 
 	for _, v := range c.stats.ZoneViews {
 		for _, z := range v.ZoneData {
-			ch <- prometheus.MustNewConstMetric(
-				zoneSerial, prometheus.CounterValue, float64(z.Serial), v.Name, z.Name,
-			)
+			if suint, err := strconv.ParseUint(z.Serial, 10, 64); err == nil {
+				ch <- prometheus.MustNewConstMetric(
+					zoneSerial, prometheus.CounterValue, float64(suint), v.Name, z.Name,
+				)
+			} else {
+				ch <- prometheus.MustNewConstMetric(
+					zoneSerial, prometheus.CounterValue, float64(0), v.Name, z.Name,
+				)
+			}
 		}
 	}
 }

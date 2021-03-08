@@ -62,6 +62,7 @@ var (
 		`bind_resolver_query_duration_seconds_bucket{view="_default",le="1.6"} 188409`,
 		`bind_resolver_query_duration_seconds_bucket{view="_default",le="+Inf"} 227755`,
 		`bind_zone_serial{view="_default",zone_name="TEST_ZONE"} 123`,
+		`bind_zone_serial{view="_default",zone_name="FAULT_TEST_ZONE"} 0`,
 	}
 	taskStats = []string{
 		`bind_tasks_running 8`,

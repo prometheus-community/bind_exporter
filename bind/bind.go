@@ -136,7 +136,7 @@ type Counter struct {
 // Counter represents a single zone counter value.
 type ZoneCounter struct {
 	Name   string
-	Serial uint64
+	Serial string
 }
 
 // Gauge represents a single gauge value.
