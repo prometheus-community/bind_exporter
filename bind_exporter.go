@@ -341,10 +341,6 @@ func (c *viewCollector) Collect(ch chan<- prometheus.Metric) {
 				ch <- prometheus.MustNewConstMetric(
 					zoneSerial, prometheus.CounterValue, float64(suint), v.Name, z.Name,
 				)
-			} else {
-				ch <- prometheus.MustNewConstMetric(
-					zoneSerial, prometheus.CounterValue, float64(0), v.Name, z.Name,
-				)
 			}
 		}
 	}
