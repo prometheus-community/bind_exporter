@@ -59,7 +59,7 @@ type View struct {
 type Zone struct {
 	Name       string `xml:"name"`
 	Rdataclass string `xml:"rdataclass"`
-	Serial     uint64 `xml:"serial"`
+	Serial     string `xml:"serial"`
 }
 
 type Counter struct {
