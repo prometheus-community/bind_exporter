@@ -9,4 +9,3 @@ ExecStart=/usr/sbin/bind_exporter $OPTIONS
 
 [Install]
 WantedBy=multi-user.target
-
