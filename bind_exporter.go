@@ -277,7 +277,7 @@ func (c *serverCollector) Collect(ch chan<- prometheus.Metric) {
 			)
 		}
 	}
-	for _, s := range c.stats.Server.serverRcodes {
+	for _, s := range c.stats.Server.ServerRcodes {
 		ch <- prometheus.MustNewConstMetric(
 			serverRcodes, prometheus.CounterValue, float64(s.Counter), s.Name,
 		)
