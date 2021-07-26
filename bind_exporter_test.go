@@ -31,6 +31,8 @@ var (
 		`bind_incoming_queries_total{type="A"} 128417`,
 		`bind_incoming_requests_total{opcode="QUERY"} 37634`,
 		`bind_responses_total{result="Success"} 29313`,
+		`bind_response_rcodes_total{rcode="NOERROR"} 989812`,
+		`bind_response_rcodes_total{rcode="NXDOMAIN"} 33958`,
 		`bind_query_duplicates_total 216`,
 		`bind_query_errors_total{error="Dropped"} 237`,
 		`bind_query_errors_total{error="Failure"} 2950`,
