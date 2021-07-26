@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?xml-stylesheet type="text/xsl" href="/bind9.xsl"?>
-<statistics version="3.6">
+<statistics version="3.8">
   <server>
-    <boot-time>2016-09-06T22:52:15Z</boot-time>
-    <config-time>2016-09-06T22:58:32Z</config-time>
-    <current-time>2016-09-07T03:15:44Z</current-time>
+    <boot-time>2021-07-15T05:11:08.926Z</boot-time>
+    <config-time>2021-07-15T05:11:08.972Z</config-time>
+    <current-time>2021-07-15T10:25:39.396Z</current-time>
+    <version>9.11.31</version>
     <counters type="opcode">
       <counter name="QUERY">37634</counter>
       <counter name="IQUERY">0</counter>
@@ -23,8 +24,35 @@
       <counter name="RESERVED14">0</counter>
       <counter name="RESERVED15">0</counter>
     </counters>
+    <counters type="rcode">
+      <counter name="NOERROR">989812</counter>
+      <counter name="FORMERR">0</counter>
+      <counter name="SERVFAIL">135</counter>
+      <counter name="NXDOMAIN">33958</counter>
+      <counter name="NOTIMP">0</counter>
+      <counter name="REFUSED">123</counter>
+      <counter name="YXDOMAIN">0</counter>
+      <counter name="YXRRSET">0</counter>
+      <counter name="NXRRSET">0</counter>
+      <counter name="NOTAUTH">0</counter>
+      <counter name="NOTZONE">0</counter>
+      <counter name="RESERVED11">0</counter>
+      <counter name="RESERVED12">0</counter>
+      <counter name="RESERVED13">0</counter>
+      <counter name="RESERVED14">0</counter>
+      <counter name="RESERVED15">0</counter>
+      <counter name="BADVERS">0</counter>
+      <counter name="17">0</counter>
+      <counter name="18">0</counter>
+      <counter name="19">0</counter>
+      <counter name="20">0</counter>
+      <counter name="21">0</counter>
+      <counter name="22">0</counter>
+      <counter name="BADCOOKIE">0</counter>
+    </counters>
     <counters type="qtype">
       <counter name="A">128417</counter>
+      <counter name="NS">1</counter>
     </counters>
     <counters type="nsstat">
       <counter name="Requestv4">156</counter>
@@ -73,12 +101,18 @@
       <counter name="NSIDOpt">0</counter>
       <counter name="ExpireOpt">0</counter>
       <counter name="OtherOpt">0</counter>
-      <counter name="SitOpt">0</counter>
-      <counter name="SitNew">0</counter>
-      <counter name="SitBadSize">0</counter>
-      <counter name="SitBadTime">0</counter>
-      <counter name="SitNoMatch">0</counter>
-      <counter name="SitMatch">0</counter>
+      <counter name="CookieIn">0</counter>
+      <counter name="CookieNew">0</counter>
+      <counter name="CookieBadSize">0</counter>
+      <counter name="CookieBadTime">0</counter>
+      <counter name="CookieNoMatch">0</counter>
+      <counter name="CookieMatch">0</counter>
+      <counter name="ECSOpt">0</counter>
+      <counter name="QryNXRedir">0</counter>
+      <counter name="QryNXRedirRLookup">0</counter>
+      <counter name="QryBADCOOKIE">0</counter>
+      <counter name="KeyTagOpt">0</counter>
+      <counter name="RecLimitDropped">0</counter>
     </counters>
     <counters type="zonestat">
       <counter name="NotifyOutv4">0</counter>
@@ -96,7 +130,324 @@
       <counter name="XfrFail">1</counter>
     </counters>
     <counters type="resstat"/>
+    <counters type="sockstat">
+      <counter name="UDP4Open">30</counter>
+      <counter name="UDP6Open">241</counter>
+      <counter name="TCP4Open">8</counter>
+      <counter name="TCP6Open">237</counter>
+      <counter name="UnixOpen">0</counter>
+      <counter name="RawOpen">1</counter>
+      <counter name="UDP4OpenFail">0</counter>
+      <counter name="UDP6OpenFail">0</counter>
+      <counter name="TCP4OpenFail">0</counter>
+      <counter name="TCP6OpenFail">0</counter>
+      <counter name="UnixOpenFail">0</counter>
+      <counter name="RawOpenFail">0</counter>
+      <counter name="UDP4Close">0</counter>
+      <counter name="UDP6Close">236</counter>
+      <counter name="TCP4Close">8181</counter>
+      <counter name="TCP6Close">1057</counter>
+      <counter name="UnixClose">0</counter>
+      <counter name="FDWatchClose">0</counter>
+      <counter name="RawClose">0</counter>
+      <counter name="UDP4BindFail">0</counter>
+      <counter name="UDP6BindFail">0</counter>
+      <counter name="TCP4BindFail">0</counter>
+      <counter name="TCP6BindFail">0</counter>
+      <counter name="UnixBindFail">0</counter>
+      <counter name="FdwatchBindFail">0</counter>
+      <counter name="UDP4ConnFail">0</counter>
+      <counter name="UDP6ConnFail">0</counter>
+      <counter name="TCP4ConnFail">0</counter>
+      <counter name="TCP6ConnFail">0</counter>
+      <counter name="UnixConnFail">0</counter>
+      <counter name="FDwatchConnFail">0</counter>
+      <counter name="UDP4Conn">0</counter>
+      <counter name="UDP6Conn">0</counter>
+      <counter name="TCP4Conn">0</counter>
+      <counter name="TCP6Conn">236</counter>
+      <counter name="UnixConn">0</counter>
+      <counter name="FDwatchConn">0</counter>
+      <counter name="TCP4AcceptFail">0</counter>
+      <counter name="TCP6AcceptFail">0</counter>
+      <counter name="UnixAcceptFail">0</counter>
+      <counter name="TCP4Accept">8183</counter>
+      <counter name="TCP6Accept">821</counter>
+      <counter name="UnixAccept">0</counter>
+      <counter name="UDP4SendErr">0</counter>
+      <counter name="UDP6SendErr">0</counter>
+      <counter name="TCP4SendErr">0</counter>
+      <counter name="TCP6SendErr">0</counter>
+      <counter name="UnixSendErr">0</counter>
+      <counter name="FDwatchSendErr">0</counter>
+      <counter name="UDP4RecvErr">0</counter>
+      <counter name="UDP6RecvErr">0</counter>
+      <counter name="TCP4RecvErr">1</counter>
+      <counter name="TCP6RecvErr">0</counter>
+      <counter name="UnixRecvErr">0</counter>
+      <counter name="FDwatchRecvErr">0</counter>
+      <counter name="RawRecvErr">0</counter>
+      <counter name="UDP4Active">30</counter>
+      <counter name="UDP6Active">5</counter>
+      <counter name="TCP4Active">10</counter>
+      <counter name="TCP6Active">1</counter>
+      <counter name="UnixActive">0</counter>
+      <counter name="RawActive">1</counter>
+    </counters>
   </server>
+  <traffic>
+    <ipv4>
+      <udp>
+        <counters type="request-size">
+          <counter name="16-31">16508</counter>
+          <counter name="32-47">698006</counter>
+          <counter name="48-63">172395</counter>
+          <counter name="64-79">34208</counter>
+          <counter name="80-95">3964</counter>
+          <counter name="96-111">200</counter>
+          <counter name="112-127">11</counter>
+          <counter name="128-143">3</counter>
+          <counter name="160-175">5</counter>
+        </counters>
+        <counters type="response-size">
+          <counter name="16-31">489</counter>
+          <counter name="32-47">4844</counter>
+          <counter name="48-63">1123</counter>
+          <counter name="64-79">3028</counter>
+          <counter name="80-95">1079</counter>
+          <counter name="96-111">787</counter>
+          <counter name="112-127">1218</counter>
+          <counter name="128-143">1068</counter>
+          <counter name="144-159">1627</counter>
+          <counter name="160-175">598</counter>
+          <counter name="176-191">712</counter>
+          <counter name="192-207">521</counter>
+          <counter name="208-223">1617</counter>
+          <counter name="224-239">404</counter>
+          <counter name="240-255">469</counter>
+          <counter name="256-271">197</counter>
+          <counter name="272-287">403</counter>
+          <counter name="288-303">3252</counter>
+          <counter name="304-319">6245</counter>
+          <counter name="320-335">3133</counter>
+          <counter name="336-351">2355</counter>
+          <counter name="352-367">1076</counter>
+          <counter name="368-383">2391</counter>
+          <counter name="384-399">5384</counter>
+          <counter name="400-415">6393</counter>
+          <counter name="416-431">2167</counter>
+          <counter name="432-447">932</counter>
+          <counter name="448-463">4067</counter>
+          <counter name="464-479">3183</counter>
+          <counter name="480-495">3039</counter>
+          <counter name="496-511">5734</counter>
+          <counter name="512-527">3823</counter>
+          <counter name="528-543">506</counter>
+          <counter name="544-559">24</counter>
+          <counter name="560-575">696</counter>
+          <counter name="576-591">16043</counter>
+          <counter name="592-607">58674</counter>
+          <counter name="608-623">51954</counter>
+          <counter name="624-639">40426</counter>
+          <counter name="640-655">39055</counter>
+          <counter name="656-671">44204</counter>
+          <counter name="672-687">55469</counter>
+          <counter name="688-703">52930</counter>
+          <counter name="704-719">36804</counter>
+          <counter name="720-735">21366</counter>
+          <counter name="736-751">95769</counter>
+          <counter name="752-767">233268</counter>
+          <counter name="768-783">17125</counter>
+          <counter name="784-799">21844</counter>
+          <counter name="800-815">8868</counter>
+          <counter name="816-831">7589</counter>
+          <counter name="832-847">797</counter>
+          <counter name="848-863">590</counter>
+          <counter name="864-879">24</counter>
+          <counter name="880-895">14492</counter>
+          <counter name="896-911">1</counter>
+          <counter name="912-927">709</counter>
+          <counter name="928-943">58</counter>
+          <counter name="944-959">97</counter>
+          <counter name="960-975">40</counter>
+          <counter name="976-991">74</counter>
+          <counter name="992-1007">17269</counter>
+          <counter name="1008-1023">13792</counter>
+          <counter name="1024-1039">1096</counter>
+          <counter name="1040-1055">278</counter>
+          <counter name="1056-1071">8</counter>
+          <counter name="1072-1087">1</counter>
+          <counter name="1120-1135">1</counter>
+          <counter name="1136-1151">1</counter>
+        </counters>
+      </udp>
+      <tcp>
+        <counters type="request-size">
+          <counter name="16-31">461</counter>
+          <counter name="32-47">4370</counter>
+          <counter name="48-63">619</counter>
+          <counter name="64-79">2867</counter>
+          <counter name="80-95">203</counter>
+          <counter name="96-111">6</counter>
+        </counters>
+        <counters type="response-size">
+          <counter name="0-15">6</counter>
+          <counter name="16-31">8</counter>
+          <counter name="32-47">70</counter>
+          <counter name="48-63">9</counter>
+          <counter name="176-191">1</counter>
+          <counter name="208-223">20</counter>
+          <counter name="480-495">3</counter>
+          <counter name="512-527">21</counter>
+          <counter name="528-543">2</counter>
+          <counter name="560-575">1</counter>
+          <counter name="576-591">66</counter>
+          <counter name="592-607">218</counter>
+          <counter name="608-623">474</counter>
+          <counter name="624-639">647</counter>
+          <counter name="640-655">627</counter>
+          <counter name="656-671">526</counter>
+          <counter name="672-687">623</counter>
+          <counter name="688-703">1174</counter>
+          <counter name="704-719">959</counter>
+          <counter name="720-735">469</counter>
+          <counter name="736-751">351</counter>
+          <counter name="752-767">321</counter>
+          <counter name="768-783">480</counter>
+          <counter name="784-799">157</counter>
+          <counter name="800-815">256</counter>
+          <counter name="816-831">214</counter>
+          <counter name="832-847">58</counter>
+          <counter name="848-863">54</counter>
+          <counter name="880-895">425</counter>
+          <counter name="912-927">100</counter>
+          <counter name="960-975">6</counter>
+          <counter name="976-991">1</counter>
+          <counter name="992-1007">6</counter>
+          <counter name="1008-1023">83</counter>
+          <counter name="1024-1039">60</counter>
+          <counter name="1040-1055">21</counter>
+          <counter name="1056-1071">1</counter>
+          <counter name="1552-1567">8</counter>
+        </counters>
+      </tcp>
+    </ipv4>
+    <ipv6>
+      <udp>
+        <counters type="request-size">
+          <counter name="16-31">1110</counter>
+          <counter name="32-47">56243</counter>
+          <counter name="48-63">7827</counter>
+          <counter name="64-79">21910</counter>
+          <counter name="80-95">1988</counter>
+          <counter name="96-111">61</counter>
+          <counter name="112-127">5</counter>
+          <counter name="128-143">1</counter>
+          <counter name="144-159">236</counter>
+        </counters>
+        <counters type="response-size">
+          <counter name="16-31">14</counter>
+          <counter name="32-47">236</counter>
+          <counter name="48-63">102</counter>
+          <counter name="64-79">457</counter>
+          <counter name="80-95">23</counter>
+          <counter name="96-111">284</counter>
+          <counter name="144-159">1</counter>
+          <counter name="160-175">5</counter>
+          <counter name="192-207">2</counter>
+          <counter name="208-223">1</counter>
+          <counter name="240-255">17</counter>
+          <counter name="256-271">7</counter>
+          <counter name="272-287">44</counter>
+          <counter name="288-303">865</counter>
+          <counter name="304-319">443</counter>
+          <counter name="320-335">593</counter>
+          <counter name="336-351">454</counter>
+          <counter name="352-367">258</counter>
+          <counter name="368-383">766</counter>
+          <counter name="384-399">793</counter>
+          <counter name="400-415">845</counter>
+          <counter name="416-431">229</counter>
+          <counter name="432-447">273</counter>
+          <counter name="448-463">733</counter>
+          <counter name="464-479">234</counter>
+          <counter name="480-495">917</counter>
+          <counter name="496-511">1455</counter>
+          <counter name="512-527">875</counter>
+          <counter name="528-543">41</counter>
+          <counter name="544-559">12</counter>
+          <counter name="560-575">82</counter>
+          <counter name="576-591">1599</counter>
+          <counter name="592-607">5702</counter>
+          <counter name="608-623">5595</counter>
+          <counter name="624-639">6738</counter>
+          <counter name="640-655">5446</counter>
+          <counter name="656-671">6034</counter>
+          <counter name="672-687">7267</counter>
+          <counter name="688-703">7008</counter>
+          <counter name="704-719">5964</counter>
+          <counter name="720-735">2678</counter>
+          <counter name="736-751">4234</counter>
+          <counter name="752-767">7560</counter>
+          <counter name="768-783">2625</counter>
+          <counter name="784-799">3018</counter>
+          <counter name="800-815">1589</counter>
+          <counter name="816-831">1160</counter>
+          <counter name="832-847">1291</counter>
+          <counter name="848-863">91</counter>
+          <counter name="864-879">8</counter>
+          <counter name="880-895">1109</counter>
+          <counter name="896-911">1</counter>
+          <counter name="912-927">243</counter>
+          <counter name="928-943">5</counter>
+          <counter name="944-959">4</counter>
+          <counter name="960-975">1</counter>
+          <counter name="976-991">22</counter>
+          <counter name="992-1007">642</counter>
+          <counter name="1008-1023">275</counter>
+          <counter name="1024-1039">340</counter>
+          <counter name="1040-1055">69</counter>
+          <counter name="1056-1071">1</counter>
+          <counter name="1072-1087">1</counter>
+        </counters>
+      </udp>
+      <tcp>
+        <counters type="request-size">
+          <counter name="16-31">12</counter>
+          <counter name="32-47">236</counter>
+          <counter name="48-63">79</counter>
+          <counter name="64-79">480</counter>
+          <counter name="80-95">14</counter>
+        </counters>
+        <counters type="response-size">
+          <counter name="576-591">1</counter>
+          <counter name="592-607">10</counter>
+          <counter name="608-623">28</counter>
+          <counter name="624-639">75</counter>
+          <counter name="640-655">58</counter>
+          <counter name="656-671">62</counter>
+          <counter name="672-687">80</counter>
+          <counter name="688-703">91</counter>
+          <counter name="704-719">72</counter>
+          <counter name="720-735">42</counter>
+          <counter name="736-751">35</counter>
+          <counter name="752-767">45</counter>
+          <counter name="768-783">47</counter>
+          <counter name="784-799">12</counter>
+          <counter name="800-815">29</counter>
+          <counter name="816-831">40</counter>
+          <counter name="832-847">34</counter>
+          <counter name="848-863">1</counter>
+          <counter name="880-895">13</counter>
+          <counter name="912-927">26</counter>
+          <counter name="992-1007">1</counter>
+          <counter name="1008-1023">8</counter>
+          <counter name="1024-1039">9</counter>
+          <counter name="1040-1055">2</counter>
+        </counters>
+      </tcp>
+    </ipv6>
+  </traffic>
   <views>
     <view name="_default">
       <counters type="resqtype">
@@ -141,13 +492,15 @@
         <counter name="NumFetch">0</counter>
         <counter name="BucketSize">31</counter>
         <counter name="REFUSED">0</counter>
-        <counter name="SitClientOut">0</counter>
-        <counter name="SitOut">0</counter>
-        <counter name="SitIn">0</counter>
-        <counter name="SitClientOk">0</counter>
+        <counter name="ClientCookieOut">0</counter>
+        <counter name="ServerCookieOut">0</counter>
+        <counter name="CookieIn">0</counter>
+        <counter name="CookieClientOk">0</counter>
         <counter name="BadEDNSVersion">0</counter>
+        <counter name="BadCookieRcode">0</counter>
         <counter name="ZoneQuota">0</counter>
         <counter name="ServerQuota">0</counter>
+        <counter name="NextItem">0</counter>
       </counters>
       <cache name="_default">
         <rrset>
@@ -248,13 +601,15 @@
         <counter name="NumFetch">0</counter>
         <counter name="BucketSize">31</counter>
         <counter name="REFUSED">0</counter>
-        <counter name="SitClientOut">0</counter>
-        <counter name="SitOut">0</counter>
-        <counter name="SitIn">0</counter>
-        <counter name="SitClientOk">0</counter>
+        <counter name="ClientCookieOut">0</counter>
+        <counter name="ServerCookieOut">0</counter>
+        <counter name="CookieIn">0</counter>
+        <counter name="CookieClientOk">0</counter>
         <counter name="BadEDNSVersion">0</counter>
+        <counter name="BadCookieRcode">0</counter>
         <counter name="ZoneQuota">0</counter>
         <counter name="ServerQuota">0</counter>
+        <counter name="NextItem">0</counter>
       </counters>
       <cache name="_bind"/>
       <counters type="adbstat">
@@ -281,4 +636,196 @@
       </counters>
     </view>
   </views>
+  <socketmgr>
+    <sockets>
+      <socket>
+        <id>0x7f1ceb3df650</id>
+        <references>2</references>
+        <type>udp</type>
+        <local-address>::#53</local-address>
+        <states>
+          <state>bound</state>
+        </states>
+      </socket>
+      <socket>
+        <id>0x7f1ceb3df8b0</id>
+        <references>4</references>
+        <type>tcp</type>
+        <local-address>::#53</local-address>
+        <states>
+          <state>listener</state>
+          <state>bound</state>
+        </states>
+      </socket>
+      <socket>
+        <id>0x7f1ceb3e2b10</id>
+        <references>2</references>
+        <type>udp</type>
+        <local-address>0.0.0.0#53</local-address>
+        <states>
+          <state>bound</state>
+        </states>
+      </socket>
+      <socket>
+        <id>0x7f1ceb3e48b0</id>
+        <references>2</references>
+        <type>tcp</type>
+        <local-address>0.0.0.0#53</local-address>
+        <states>
+          <state>listener</state>
+          <state>bound</state>
+        </states>
+      </socket>
+    </sockets>
+  </socketmgr>
+  <taskmgr>
+    <thread-model>
+      <type>threaded</type>
+      <worker-threads>5</worker-threads>
+      <default-quantum>5</default-quantum>
+      <tasks-running>1</tasks-running>
+      <tasks-ready>0</tasks-ready>
+    </thread-model>
+    <tasks>
+      <task>
+        <name>server</name>
+        <references>11</references>
+        <id>0x7f1cebc34070</id>
+        <state>idle</state>
+        <quantum>5</quantum>
+        <events>0</events>
+      </task>
+      <task>
+        <name>zmgr</name>
+        <references>5</references>
+        <id>0x7f1cebc34138</id>
+        <state>idle</state>
+        <quantum>1</quantum>
+        <events>0</events>
+      </task>
+      <task>
+        <name>zone</name>
+        <references>5</references>
+        <id>0x7f1cebc34200</id>
+        <state>idle</state>
+        <quantum>2</quantum>
+        <events>0</events>
+      </task>
+      <task>
+        <name>loadzone</name>
+        <references>2</references>
+        <id>0x7f1cebc34b60</id>
+        <state>idle</state>
+        <quantum>2</quantum>
+        <events>0</events>
+      </task>
+      <task>
+        <name>statchannel</name>
+        <references>3</references>
+        <id>0x7f1cebc59908</id>
+        <state>running</state>
+        <quantum>5</quantum>
+        <events>0</events>
+      </task>
+      <task>
+        <name>udpdispatch</name>
+        <references>1</references>
+        <id>0x7f1cebc599d0</id>
+        <state>idle</state>
+        <quantum>5</quantum>
+        <events>0</events>
+      </task>
+      <task>
+        <name>udpdispatch</name>
+        <references>1</references>
+        <id>0x7f1ceb3f6648</id>
+        <state>idle</state>
+        <quantum>5</quantum>
+        <events>0</events>
+      </task>
+    </tasks>
+  </taskmgr>
+  <memory>
+    <contexts>
+      <context>
+        <id>0x7f1cec3b60a0</id>
+        <name>main</name>
+        <references>1273</references>
+        <total>31614069</total>
+        <inuse>3630424</inuse>
+        <maxinuse>3705111</maxinuse>
+        <blocksize>1572864</blocksize>
+        <pools>200</pools>
+        <hiwater>0</hiwater>
+        <lowater>0</lowater>
+      </context>
+      <context>
+        <id>0x7f1cec3b6250</id>
+        <name>dst</name>
+        <references>1</references>
+        <total>135557497</total>
+        <inuse>97074</inuse>
+        <maxinuse>111296</maxinuse>
+        <blocksize>-</blocksize>
+        <pools>0</pools>
+        <hiwater>0</hiwater>
+        <lowater>0</lowater>
+      </context>
+      <context>
+        <id>0x7f1cec3b63c0</id>
+        <name>zonemgr-pool</name>
+        <references>43</references>
+        <total>10660004492</total>
+        <inuse>6626226696</inuse>
+        <maxinuse>7373790225</maxinuse>
+        <blocksize>7374372864</blocksize>
+        <pools>0</pools>
+        <hiwater>0</hiwater>
+        <lowater>0</lowater>
+      </context>
+      <context>
+        <id>0x7f1cec3b6560</id>
+        <name>zonemgr-pool</name>
+        <references>28</references>
+        <total>285193</total>
+        <inuse>12720</inuse>
+        <maxinuse>23769</maxinuse>
+        <blocksize>262144</blocksize>
+        <pools>0</pools>
+        <hiwater>0</hiwater>
+        <lowater>0</lowater>
+      </context>
+      <context>
+        <id>0x7f1cea27c1a0</id>
+        <name>cache</name>
+        <references>8</references>
+        <total>15929752</total>
+        <inuse>21152</inuse>
+        <maxinuse>29424</maxinuse>
+        <blocksize>262144</blocksize>
+        <pools>0</pools>
+        <hiwater>1835008</hiwater>
+        <lowater>1572864</lowater>
+      </context>
+      <context>
+        <id>0x7f1cea27c330</id>
+        <name>cache_heap</name>
+        <references>18</references>
+        <total>262144</total>
+        <inuse>1024</inuse>
+        <maxinuse>1024</maxinuse>
+        <blocksize>262144</blocksize>
+        <pools>0</pools>
+        <hiwater>0</hiwater>
+        <lowater>0</lowater>
+      </context>
+    </contexts>
+    <summary>
+      <TotalUse>11494216710</TotalUse>
+      <InUse>6631824786</InUse>
+      <BlockSize>7398227968</BlockSize>
+      <ContextSize>6933680</ContextSize>
+      <Lost>0</Lost>
+    </summary>
+  </memory>
 </statistics>

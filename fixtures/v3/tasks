@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?xml-stylesheet type="text/xsl" href="/bind9.xsl"?>
-<statistics version="3.6">
+<statistics version="3.8">
   <server>
-    <boot-time>2016-09-10T17:22:43Z</boot-time>
-    <config-time>2016-09-10T17:22:43Z</config-time>
-    <current-time>2016-09-10T17:44:12Z</current-time>
+    <boot-time>2021-07-15T05:11:08.926Z</boot-time>
+    <config-time>2021-07-15T05:11:08.972Z</config-time>
+    <current-time>2021-07-15T10:25:39.396Z</current-time>
+    <version>9.11.31</version>
   </server>
   <views/>
   <taskmgr>
