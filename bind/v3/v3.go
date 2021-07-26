@@ -36,7 +36,7 @@ const (
 	resqtype = "resqtype"
 	resstats = "resstats"
 	zonestat = "zonestat"
-	rcode = "rcode"
+	rcode    = "rcode"
 )
 
 type Statistics struct {
