@@ -1,0 +1,19 @@
+name: prometheus-bind-exporter
+version: git
+title: Prometheus bind exporter
+summary: Export BIND (named/dns) v9+ service metrics to Prometheus.
+description: Export BIND (named/dns) v9+ service metrics to Prometheus.
+
+grade: stable
+confinement: classic
+base: core20
+
+parts:
+  prometheus-bind-exporter:
+    plugin: go
+    source: https://github.com/prometheus-community/bind_exporter.git
+    source-depth: 1
+
+apps:
+  prometheus-bind-exporter:
+    command: bin/bind_exporter

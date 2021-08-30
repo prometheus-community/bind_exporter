@@ -26,6 +26,12 @@ docker pull prometheuscommunity/bind-exporter:v0.3.0
 docker run -d --network host prometheuscommunity/bind-exporter:v0.3.0
 ```
 
+### Install with Snap
+
+```bash
+snap install prometheus-bind-exporter --classic
+```
+
 ### Examples
 
 Run `bind_exporter` in a Docker container and communicate with `named` on non-default statistics URL:
