@@ -86,7 +86,7 @@ GOLANGCI_LINT_OPTS ?=
 GOLANGCI_LINT_VERSION ?= v1.39.0
 # golangci-lint only supports linux, darwin and windows platforms on i386/amd64.
 # windows isn't included here because of the path separator being different.
-ifeq ($(GOHOSTOS),$(filter $(GOHOSTOS),linux darwin))
+ifeq ($(GOHOSTOS),$(filter $(GOHOSTOS),linux_turned_off_for_now darwin))
 	ifeq ($(GOHOSTARCH),$(filter $(GOHOSTARCH),amd64 i386))
 		GOLANGCI_LINT := $(FIRST_GOPATH)/bin/golangci-lint
 	endif
