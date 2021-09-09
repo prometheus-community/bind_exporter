@@ -165,6 +165,11 @@ var (
 		"QryFORMERR":  serverResponses,
 		"QryNXDOMAIN": serverResponses,
 	}
+	serverRcodes = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "response_rcodes_total"),
+		"Number of responses sent per RCODE.",
+		[]string{"rcode"}, nil,
+	)
 	serverMetricStats = map[string]*prometheus.Desc{
 		"QryDuplicate": prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "", "query_duplicates_total"),
@@ -233,6 +238,7 @@ func (c *serverCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- incomingRequests
 	ch <- serverQueryErrors
 	ch <- serverResponses
+	ch <- serverRcodes
 	for _, desc := range serverMetricStats {
 		ch <- desc
 	}
@@ -270,6 +276,11 @@ func (c *serverCollector) Collect(ch chan<- prometheus.Metric) {
 				desc, prometheus.CounterValue, float64(s.Counter),
 			)
 		}
+	}
+	for _, s := range c.stats.Server.ServerRcodes {
+		ch <- prometheus.MustNewConstMetric(
+			serverRcodes, prometheus.CounterValue, float64(s.Counter), s.Name,
+		)
 	}
 	for _, s := range c.stats.Server.ZoneStatistics {
 		if desc, ok := serverMetricStats[s.Name]; ok {

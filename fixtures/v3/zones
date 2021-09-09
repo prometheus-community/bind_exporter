@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?xml-stylesheet type="text/xsl" href="/bind9.xsl"?>
-<statistics version="3.6">
+<statistics version="3.8">
   <views>
     <view name="_default">
       <zones>
