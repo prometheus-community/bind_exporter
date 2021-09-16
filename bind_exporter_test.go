@@ -27,7 +27,7 @@ import (
 
 var (
 	serverStatsV2 = []string{
-		`bind_boot_time_seconds 1.473202335e+09`,
+		`bind_boot_time_seconds 1.626325868e+09`,
 		`bind_incoming_queries_total{type="A"} 128417`,
 		`bind_incoming_requests_total{opcode="QUERY"} 37634`,
 		`bind_responses_total{result="Success"} 29313`,
@@ -41,7 +41,9 @@ var (
 		`bind_recursive_clients 76`,
 	}
 	serverStatsV3 = combine(serverStatsV2, []string{
-		`bind_config_time_seconds 1.473202712e+09`,
+		`bind_config_time_seconds 1.626325868e+09`,
+		`bind_response_rcodes_total{rcode="NOERROR"} 989812`,
+		`bind_response_rcodes_total{rcode="NXDOMAIN"} 33958`,
 	})
 	viewStats = []string{
 		`bind_resolver_cache_rrsets{type="A",view="_default"} 34324`,

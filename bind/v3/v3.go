@@ -36,6 +36,7 @@ const (
 	resqtype = "resqtype"
 	resstats = "resstats"
 	zonestat = "zonestat"
+	rcode    = "rcode"
 )
 
 type Statistics struct {
@@ -120,6 +121,8 @@ func (c *Client) Stats(groups ...bind.StatisticGroup) (bind.Statistics, error) {
 				s.Server.NameServerStats = c.Counters
 			case zonestat:
 				s.Server.ZoneStatistics = c.Counters
+			case rcode:
+				s.Server.ServerRcodes = c.Counters
 			}
 		}
 
