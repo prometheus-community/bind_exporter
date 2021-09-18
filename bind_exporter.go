@@ -15,7 +15,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"math"
 	"net/http"
 	_ "net/http/pprof"
@@ -24,12 +23,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-kit/kit/log/level"
+	"github.com/go-kit/log/level"
 	"github.com/prometheus-community/bind_exporter/bind"
 	"github.com/prometheus-community/bind_exporter/bind/auto"
 	"github.com/prometheus-community/bind_exporter/bind/v2"
 	"github.com/prometheus-community/bind_exporter/bind/v3"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/promlog"
 	"github.com/prometheus/common/version"
@@ -548,18 +548,8 @@ func main() {
 		NewExporter(*bindVersion, *bindURI, *bindTimeout, groups),
 	)
 	if *bindPidFile != "" {
-		procExporter := prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{
-			PidFn: func() (int, error) {
-				content, err := ioutil.ReadFile(*bindPidFile)
-				if err != nil {
-					return 0, fmt.Errorf("Can't read pid file: %s", err)
-				}
-				value, err := strconv.Atoi(strings.TrimSpace(string(content)))
-				if err != nil {
-					return 0, fmt.Errorf("Can't parse pid file: %s", err)
-				}
-				return value, nil
-			},
+		procExporter := collectors.NewProcessCollector(collectors.ProcessCollectorOpts{
+			PidFn:     prometheus.NewPidFileFn(*bindPidFile),
 			Namespace: namespace,
 		})
 		prometheus.MustRegister(procExporter)
