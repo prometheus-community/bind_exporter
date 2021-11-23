@@ -1,7 +1,10 @@
-## master / unreleased
+## 0.5.0 / 2021-11-23
+
+* [FEATURE] Add support for RCODE metrics. #113
+* [BUGFIX] handle non integer values for zone serial. #97
 
 ## 0.4.0 / 2021-01-14
-  
+
 * [CHANGE] Replace legacy common/log with promlog #85
 * [FEATURE] Add current recursive clients metric #74
 * [FEATURE] Add zone serial numbers as metrics #91
