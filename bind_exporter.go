@@ -142,6 +142,7 @@ var (
 		"SERVFAIL":      resolverResponseErrors,
 		"FORMERR":       resolverResponseErrors,
 		"OtherError":    resolverResponseErrors,
+		"REFUSED":       resolverResponseErrors,
 		"ValOk":         resolverDNSSECSuccess,
 		"ValNegOk":      resolverDNSSECSuccess,
 	}
