@@ -491,7 +491,7 @@
         <counter name="QryRTT1600+">39346</counter>
         <counter name="NumFetch">0</counter>
         <counter name="BucketSize">31</counter>
-        <counter name="REFUSED">0</counter>
+        <counter name="REFUSED">5798</counter>
         <counter name="ClientCookieOut">0</counter>
         <counter name="ServerCookieOut">0</counter>
         <counter name="CookieIn">0</counter>
@@ -600,7 +600,7 @@
         <counter name="QryRTT1600+">0</counter>
         <counter name="NumFetch">0</counter>
         <counter name="BucketSize">31</counter>
-        <counter name="REFUSED">0</counter>
+        <counter name="REFUSED">17</counter>
         <counter name="ClientCookieOut">0</counter>
         <counter name="ServerCookieOut">0</counter>
         <counter name="CookieIn">0</counter>

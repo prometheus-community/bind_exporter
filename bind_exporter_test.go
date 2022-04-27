@@ -45,7 +45,7 @@ var (
 		`bind_response_rcodes_total{rcode="NOERROR"} 989812`,
 		`bind_response_rcodes_total{rcode="NXDOMAIN"} 33958`,
 	})
-	viewStats = []string{
+	viewStatsV2 = []string{
 		`bind_resolver_cache_rrsets{type="A",view="_default"} 34324`,
 		`bind_resolver_queries_total{type="CNAME",view="_default"} 28`,
 		`bind_resolver_response_errors_total{error="FORMERR",view="_bind"} 0`,
@@ -65,6 +65,10 @@ var (
 		`bind_resolver_query_duration_seconds_bucket{view="_default",le="+Inf"} 227755`,
 		`bind_zone_serial{view="_default",zone_name="TEST_ZONE"} 123`,
 	}
+	viewStatsV3 = combine(viewStatsV2, []string{
+		`bind_resolver_response_errors_total{error="REFUSED",view="_bind"} 17`,
+		`bind_resolver_response_errors_total{error="REFUSED",view="_default"} 5798`,
+	})
 	taskStats = []string{
 		`bind_tasks_running 8`,
 		`bind_worker_threads 16`,
@@ -76,7 +80,7 @@ func TestBindExporterV2Client(t *testing.T) {
 		server:  newV2Server(),
 		groups:  []bind.StatisticGroup{bind.ServerStats, bind.ViewStats, bind.TaskStats},
 		version: "xml.v2",
-		include: combine([]string{`bind_up 1`}, serverStatsV2, viewStats, taskStats),
+		include: combine([]string{`bind_up 1`}, serverStatsV2, viewStatsV2, taskStats),
 		exclude: []string{`bind_config_time_seconds`},
 	}.run(t)
 }
@@ -86,7 +90,7 @@ func TestBindExporterV3Client(t *testing.T) {
 		server:  newV3Server(),
 		groups:  []bind.StatisticGroup{bind.ServerStats, bind.ViewStats, bind.TaskStats},
 		version: "xml.v3",
-		include: combine([]string{`bind_up 1`}, serverStatsV3, viewStats, taskStats),
+		include: combine([]string{`bind_up 1`}, serverStatsV3, viewStatsV3, taskStats),
 	}.run(t)
 }
 
@@ -115,7 +119,7 @@ func TestBindExporterStatisticGroups(t *testing.T) {
 		groups:  []bind.StatisticGroup{bind.ServerStats},
 		version: "xml.v2",
 		include: combine([]string{`bind_up 1`}, serverStatsV2),
-		exclude: combine(viewStats, taskStats, []string{`bind_tasks_running 0`, `bind_worker_threads 0`}),
+		exclude: combine(viewStatsV2, taskStats, []string{`bind_tasks_running 0`, `bind_worker_threads 0`}),
 	}.run(t)
 }
 
