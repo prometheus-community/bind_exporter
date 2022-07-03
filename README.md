@@ -30,7 +30,7 @@ docker run -d --network host prometheuscommunity/bind-exporter:v0.3.0
 
 Run `bind_exporter` in a Docker container and communicate with `named` on non-default statistics URL:
 ```bash
-docker run -d prometheuscommunity/bind-exporter:v0.3.0 -bind.stats-url http://<IP/hostname>:8053
+docker run -d prometheuscommunity/bind-exporter:v0.3.0 --bind.stats-url http://<IP/hostname>:8053
 ```
 
 ## TLS and basic authentication
