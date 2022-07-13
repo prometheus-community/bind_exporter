@@ -26,8 +26,8 @@ import (
 	"github.com/go-kit/log/level"
 	"github.com/prometheus-community/bind_exporter/bind"
 	"github.com/prometheus-community/bind_exporter/bind/auto"
-	"github.com/prometheus-community/bind_exporter/bind/v2"
-	"github.com/prometheus-community/bind_exporter/bind/v3"
+	v2 "github.com/prometheus-community/bind_exporter/bind/v2"
+	v3 "github.com/prometheus-community/bind_exporter/bind/v3"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -459,7 +459,7 @@ func histogram(stats []bind.Counter) (map[float64]uint64, uint64, error) {
 				}
 			}
 
-			buckets[b/1000] = count + uint64(s.Counter)
+			buckets[b/1000] = uint64(s.Counter)
 			count += uint64(s.Counter)
 		}
 	}
