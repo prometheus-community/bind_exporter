@@ -58,11 +58,11 @@ var (
 		`bind_resolver_response_errors_total{error="SERVFAIL",view="_default"} 7596`,
 		`bind_resolver_response_lame_total{view="_default"} 9108`,
 		`bind_resolver_query_duration_seconds_bucket{view="_default",le="0.01"} 38334`,
-		`bind_resolver_query_duration_seconds_bucket{view="_default",le="0.1"} 113122`,
-		`bind_resolver_query_duration_seconds_bucket{view="_default",le="0.5"} 182658`,
-		`bind_resolver_query_duration_seconds_bucket{view="_default",le="0.8"} 187375`,
-		`bind_resolver_query_duration_seconds_bucket{view="_default",le="1.6"} 188409`,
-		`bind_resolver_query_duration_seconds_bucket{view="_default",le="+Inf"} 227755`,
+		`bind_resolver_query_duration_seconds_bucket{view="_default",le="0.1"} 74788`,
+		`bind_resolver_query_duration_seconds_bucket{view="_default",le="0.5"} 69536`,
+		`bind_resolver_query_duration_seconds_bucket{view="_default",le="0.8"} 4717`,
+		`bind_resolver_query_duration_seconds_bucket{view="_default",le="1.6"} 1034`,
+		`bind_resolver_query_duration_seconds_bucket{view="_default",le="+Inf"} 39346`,
 		`bind_zone_serial{view="_default",zone_name="TEST_ZONE"} 123`,
 	}
 	viewStatsV3 = combine(viewStatsV2, []string{
