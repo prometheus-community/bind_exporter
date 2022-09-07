@@ -1,6 +1,16 @@
-## master / unreleased
-  
-* [BUGFIX] Use uint64 for counters in v3 xml. #70
+## 0.5.0 / 2021-11-23
+
+* [FEATURE] Add support for RCODE metrics. #113
+* [BUGFIX] handle non integer values for zone serial. #97
+
+## 0.4.0 / 2021-01-14
+
+* [CHANGE] Replace legacy common/log with promlog #85
+* [FEATURE] Add current recursive clients metric #74
+* [FEATURE] Add zone serial numbers as metrics #91
+* [FEATURE] Add TLS and basic authentication #94
+* [BUGFIX] Use uint64 for counters in v3 xml #70
+* [BUGFIX] Fix Gauge type for large gauges #90
 
 ## 0.3.0 / 2020-01-08
 

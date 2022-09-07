@@ -15,7 +15,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"math"
 	"net/http"
 	_ "net/http/pprof"
@@ -24,15 +23,18 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-kit/kit/log/level"
+	"github.com/go-kit/log/level"
 	"github.com/prometheus-community/bind_exporter/bind"
 	"github.com/prometheus-community/bind_exporter/bind/auto"
 	"github.com/prometheus-community/bind_exporter/bind/v2"
 	"github.com/prometheus-community/bind_exporter/bind/v3"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/promlog"
 	"github.com/prometheus/common/version"
+	"github.com/prometheus/exporter-toolkit/web"
+	webflag "github.com/prometheus/exporter-toolkit/web/kingpinflag"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -140,6 +142,7 @@ var (
 		"SERVFAIL":      resolverResponseErrors,
 		"FORMERR":       resolverResponseErrors,
 		"OtherError":    resolverResponseErrors,
+		"REFUSED":       resolverResponseErrors,
 		"ValOk":         resolverDNSSECSuccess,
 		"ValNegOk":      resolverDNSSECSuccess,
 	}
@@ -163,6 +166,11 @@ var (
 		"QryFORMERR":  serverResponses,
 		"QryNXDOMAIN": serverResponses,
 	}
+	serverRcodes = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "response_rcodes_total"),
+		"Number of responses sent per RCODE.",
+		[]string{"rcode"}, nil,
+	)
 	serverMetricStats = map[string]*prometheus.Desc{
 		"QryDuplicate": prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "", "query_duplicates_total"),
@@ -231,6 +239,7 @@ func (c *serverCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- incomingRequests
 	ch <- serverQueryErrors
 	ch <- serverResponses
+	ch <- serverRcodes
 	for _, desc := range serverMetricStats {
 		ch <- desc
 	}
@@ -268,6 +277,11 @@ func (c *serverCollector) Collect(ch chan<- prometheus.Metric) {
 				desc, prometheus.CounterValue, float64(s.Counter),
 			)
 		}
+	}
+	for _, s := range c.stats.Server.ServerRcodes {
+		ch <- prometheus.MustNewConstMetric(
+			serverRcodes, prometheus.CounterValue, float64(s.Counter), s.Name,
+		)
 	}
 	for _, s := range c.stats.Server.ZoneStatistics {
 		if desc, ok := serverMetricStats[s.Name]; ok {
@@ -335,9 +349,11 @@ func (c *viewCollector) Collect(ch chan<- prometheus.Metric) {
 
 	for _, v := range c.stats.ZoneViews {
 		for _, z := range v.ZoneData {
-			ch <- prometheus.MustNewConstMetric(
-				zoneSerial, prometheus.CounterValue, float64(z.Serial), v.Name, z.Name,
-			)
+			if suint, err := strconv.ParseUint(z.Serial, 10, 64); err == nil {
+				ch <- prometheus.MustNewConstMetric(
+					zoneSerial, prometheus.CounterValue, float64(suint), v.Name, z.Name,
+				)
+			}
 		}
 	}
 }
@@ -503,6 +519,7 @@ func main() {
 		bindVersion = kingpin.Flag("bind.stats-version",
 			"BIND statistics version. Can be detected automatically.",
 		).Default("auto").Enum("xml.v2", "xml.v3", "auto")
+		webConfig     = webflag.AddFlags(kingpin.CommandLine)
 		listenAddress = kingpin.Flag("web.listen-address",
 			"Address to listen on for web interface and telemetry",
 		).Default(":9119").String()
@@ -532,18 +549,8 @@ func main() {
 		NewExporter(*bindVersion, *bindURI, *bindTimeout, groups),
 	)
 	if *bindPidFile != "" {
-		procExporter := prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{
-			PidFn: func() (int, error) {
-				content, err := ioutil.ReadFile(*bindPidFile)
-				if err != nil {
-					return 0, fmt.Errorf("Can't read pid file: %s", err)
-				}
-				value, err := strconv.Atoi(strings.TrimSpace(string(content)))
-				if err != nil {
-					return 0, fmt.Errorf("Can't parse pid file: %s", err)
-				}
-				return value, nil
-			},
+		procExporter := collectors.NewProcessCollector(collectors.ProcessCollectorOpts{
+			PidFn:     prometheus.NewPidFileFn(*bindPidFile),
 			Namespace: namespace,
 		})
 		prometheus.MustRegister(procExporter)
@@ -560,7 +567,8 @@ func main() {
              </body>
              </html>`))
 	})
-	if err := http.ListenAndServe(*listenAddress, nil); err != nil {
+	srv := &http.Server{Addr: *listenAddress}
+	if err := web.ListenAndServe(srv, *webConfig, logger); err != nil {
 		level.Error(logger).Log("err", err)
 		os.Exit(1)
 	}

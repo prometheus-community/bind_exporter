@@ -101,6 +101,7 @@ type Server struct {
 	IncomingRequests []Counter
 	NameServerStats  []Counter
 	ZoneStatistics   []Counter
+	ServerRcodes     []Counter
 }
 
 // View represents statistics for a single BIND view.
@@ -132,13 +133,13 @@ type Counter struct {
 // Counter represents a single zone counter value.
 type ZoneCounter struct {
 	Name   string
-	Serial uint64
+	Serial string
 }
 
 // Gauge represents a single gauge value.
 type Gauge struct {
 	Name  string `xml:"name"`
-	Gauge int64  `xml:"counter"`
+	Gauge uint64 `xml:"counter"`
 }
 
 // Task represents a single running task.

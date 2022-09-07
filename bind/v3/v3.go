@@ -36,6 +36,7 @@ const (
 	resqtype = "resqtype"
 	resstats = "resstats"
 	zonestat = "zonestat"
+	rcode    = "rcode"
 )
 
 type Statistics struct {
@@ -80,7 +81,7 @@ type Counter struct {
 type ZoneCounter struct {
 	Name       string `xml:"name,attr"`
 	Rdataclass string `xml:"rdataclass,attr"`
-	Serial     uint64 `xml:"serial"`
+	Serial     string `xml:"serial"`
 }
 
 // Client implements bind.Client and can be used to query a BIND v3 API.
@@ -120,6 +121,8 @@ func (c *Client) Stats(groups ...bind.StatisticGroup) (bind.Statistics, error) {
 				s.Server.NameServerStats = c.Counters
 			case zonestat:
 				s.Server.ZoneStatistics = c.Counters
+			case rcode:
+				s.Server.ServerRcodes = c.Counters
 			}
 		}
 
