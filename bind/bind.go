@@ -62,8 +62,7 @@ func (c *XMLClient) Get(p string, v interface{}) error {
 		return fmt.Errorf("unexpected status %s", resp.Status)
 	}
 
-	dec := xml.NewDecoder(resp.Body)
-	if err := dec.Decode(v); err != nil {
+	if err := xml.NewDecoder(resp.Body).Decode(v); err != nil {
 		return fmt.Errorf("failed to unmarshal XML response: %s", err)
 	}
 
