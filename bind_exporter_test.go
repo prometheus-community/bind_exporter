@@ -143,7 +143,7 @@ type bindExporterTest struct {
 func (b bindExporterTest) run(t *testing.T) {
 	defer b.server.Close()
 
-	o, err := collect(NewExporter(b.version, b.server.URL, 100*time.Millisecond, b.groups))
+	o, err := collect(NewExporter(b.version, b.server.URL, time.Second, b.groups))
 	if err != nil {
 		t.Fatal(err)
 	}
