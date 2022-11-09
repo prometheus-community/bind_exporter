@@ -519,16 +519,14 @@ func main() {
 		bindVersion = kingpin.Flag("bind.stats-version",
 			"BIND statistics version. Can be detected automatically.",
 		).Default("auto").Enum("xml.v2", "xml.v3", "auto")
-		webConfig     = webflag.AddFlags(kingpin.CommandLine)
-		listenAddress = kingpin.Flag("web.listen-address",
-			"Address to listen on for web interface and telemetry",
-		).Default(":9119").String()
 		metricsPath = kingpin.Flag(
 			"web.telemetry-path", "Path under which to expose metrics",
 		).Default("/metrics").String()
 
 		groups statisticGroups
 	)
+
+	toolkitFlags := webflag.AddFlags(kingpin.CommandLine, ":9119")
 
 	kingpin.Flag("bind.stats-groups",
 		"Comma-separated list of statistics to collect",
@@ -556,7 +554,6 @@ func main() {
 		prometheus.MustRegister(procExporter)
 	}
 
-	level.Info(logger).Log("msg", "Listening on", "address", *listenAddress)
 	http.Handle(*metricsPath, promhttp.Handler())
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`<html>
@@ -567,8 +564,8 @@ func main() {
              </body>
              </html>`))
 	})
-	srv := &http.Server{Addr: *listenAddress}
-	if err := web.ListenAndServe(srv, *webConfig, logger); err != nil {
+	srv := &http.Server{}
+	if err := web.ListenAndServe(srv, toolkitFlags, logger); err != nil {
 		level.Error(logger).Log("err", err)
 		os.Exit(1)
 	}
