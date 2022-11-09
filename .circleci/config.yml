@@ -7,7 +7,7 @@ executors:
   # also be updated.
   golang:
     docker:
-      - image: quay.io/prometheus/golang-builder:1.18-base
+      - image: cimg/go:1.19
 jobs:
   test:
     executor: golang
