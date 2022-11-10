@@ -1,3 +1,9 @@
+## 0.6.0 / 2022-11-09
+
+* [FEATURE] Add REFUSED label for metric bind_resolver_response_errors_total #125
+* [ENHANCEMENT] Decode resp.Body directly, without ioutil.ReadAll #84
+* [ENHANCEMENT] Update exporter-toolkit to support new listen options #151
+
 ## 0.5.0 / 2021-11-23
 
 * [FEATURE] Add support for RCODE metrics. #113
