@@ -172,7 +172,7 @@ var (
 		"QryNXDOMAIN":   serverResponses,
 		"QryTCP":        responseRateLimits,
 		"QryUDP":        responseRateLimits,
-		"RateSilpped":   responseRateLimits,
+		"RateSlipped":   responseRateLimits,
 		"RateDropped":   responseRateLimits,
 		"TruncatedResp": responseRateLimits,
 	}
