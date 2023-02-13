@@ -39,13 +39,12 @@ var (
 		`bind_zone_transfer_success_total 25`,
 		`bind_zone_transfer_failure_total 1`,
 		`bind_recursive_clients 76`,
-		`bind_response_rate_limits_total{type="TruncatedResp"} 0`,
+		`bind_response_rate_limits_total{type="RateSlipped"} 0`,
 	}
 	serverStatsV3 = combine(serverStatsV2, []string{
 		`bind_config_time_seconds 1.626325868e+09`,
 		`bind_response_rcodes_total{rcode="NOERROR"} 989812`,
 		`bind_response_rcodes_total{rcode="NXDOMAIN"} 33958`,
-		`bind_response_rate_limits_total{type="UDP"} 156`,
 	})
 	viewStatsV2 = []string{
 		`bind_resolver_cache_rrsets{type="A",view="_default"} 34324`,
