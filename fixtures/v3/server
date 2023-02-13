@@ -93,7 +93,7 @@
       <counter name="UpdateBadPrereq">0</counter>
       <counter name="RecursClients">76</counter>
       <counter name="DNS64">0</counter>
-      <counter name="RateDropped">0</counter>
+      <counter name="RateDropped">1</counter>
       <counter name="RateSlipped">0</counter>
       <counter name="RPZRewrites">0</counter>
       <counter name="QryUDP">156</counter>
