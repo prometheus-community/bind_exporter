@@ -39,7 +39,7 @@ var (
 		`bind_zone_transfer_success_total 25`,
 		`bind_zone_transfer_failure_total 1`,
 		`bind_recursive_clients 76`,
-		`bind_response_rate_limits_total{type="TruncatedResp"} 4.338900351e+09`,
+		`bind_response_rate_limits_total{type="TruncatedResp"} 0`,
 	}
 	serverStatsV3 = combine(serverStatsV2, []string{
 		`bind_config_time_seconds 1.626325868e+09`,
