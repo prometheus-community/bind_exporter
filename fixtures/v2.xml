@@ -1833,7 +1833,7 @@
         </nsstat>
         <nsstat>
           <name>RateDropped</name>
-          <counter>0</counter>
+          <counter>1</counter>
         </nsstat>
         <nsstat>
           <name>RateSlipped</name>
