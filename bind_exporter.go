@@ -72,6 +72,11 @@ var (
 		"Number of incoming DNS requests.",
 		[]string{"opcode"}, nil,
 	)
+	responseRateLimits = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "response_rate_limit_total"),
+		"Number of response-rate-limit DNS responses.",
+		[]string{"type"}, nil,
+	)
 	resolverCache = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, resolver, "cache_rrsets"),
 		"Number of RRSets in Cache database.",
@@ -157,14 +162,19 @@ var (
 		[]string{"result"}, nil,
 	)
 	serverLabelStats = map[string]*prometheus.Desc{
-		"QryDropped":  serverQueryErrors,
-		"QryFailure":  serverQueryErrors,
-		"QrySuccess":  serverResponses,
-		"QryReferral": serverResponses,
-		"QryNxrrset":  serverResponses,
-		"QrySERVFAIL": serverResponses,
-		"QryFORMERR":  serverResponses,
-		"QryNXDOMAIN": serverResponses,
+		"QryDropped":    serverQueryErrors,
+		"QryFailure":    serverQueryErrors,
+		"QrySuccess":    serverResponses,
+		"QryReferral":   serverResponses,
+		"QryNxrrset":    serverResponses,
+		"QrySERVFAIL":   serverResponses,
+		"QryFORMERR":    serverResponses,
+		"QryNXDOMAIN":   serverResponses,
+		"QryTCP":        responseRateLimits,
+		"QryUDP":        responseRateLimits,
+		"RateSilpped":   responseRateLimits,
+		"RateDropped":   responseRateLimits,
+		"TruncatedResp": responseRateLimits,
 	}
 	serverRcodes = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "response_rcodes_total"),
@@ -240,6 +250,7 @@ func (c *serverCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- serverQueryErrors
 	ch <- serverResponses
 	ch <- serverRcodes
+	ch <- responseRateLimits
 	for _, desc := range serverMetricStats {
 		ch <- desc
 	}
