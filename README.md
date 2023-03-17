@@ -43,7 +43,7 @@ using the `--web.config.file` parameter. The format of the file is described
 
 ## Other resources
 
-Grafana Dashboard: https://grafana.com/dashboards/12309
+Grafana Dashboard: [here](https://grafana.com/grafana/dashboards/12309)
 
 ## Troubleshooting
 
