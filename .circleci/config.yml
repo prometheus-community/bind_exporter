@@ -1,13 +1,13 @@
 ---
 version: 2.1
 orbs:
-  prometheus: prometheus/prometheus@0.16.0
+  prometheus: prometheus/prometheus@0.17.1
 executors:
   # Whenever the Go version is updated here, .promu.yml should
   # also be updated.
   golang:
     docker:
-      - image: cimg/go:1.19
+      - image: cimg/go:1.20
 jobs:
   test:
     executor: golang
@@ -18,10 +18,10 @@ jobs:
           file: bind_exporter
   codespell:
     docker:
-      - image: circleci/python
+      - image: cimg/python:3.11
     steps:
       - checkout
-      - run: sudo pip install codespell
+      - run: pip install codespell
       - run: codespell --skip=".git,./vendor,ttar,go.mod,go.sum,*pem" -L uint,packages\',uptodate
 workflows:
   version: 2
