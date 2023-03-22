@@ -1616,7 +1616,7 @@
             <references>2</references>
             <id>0x7f989b7cd0c0</id>
             <state>idle</state>
-            <quantum>1</quantum>
+            <quantum>-1</quantum>
           </task>
         </tasks>
       </taskmgr>

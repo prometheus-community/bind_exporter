@@ -30,7 +30,7 @@
         <references>5</references>
         <id>0x7febdb4790d0</id>
         <state>idle</state>
-        <quantum>1</quantum>
+        <quantum>-1</quantum>
         <events>0</events>
       </task>
       <task>
