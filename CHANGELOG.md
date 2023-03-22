@@ -1,3 +1,7 @@
+## 0.6.1 / 2023-03-22
+
+* [BUGFIX] Fix unmarshall error for negative values #166
+
 ## 0.6.0 / 2022-11-09
 
 * [FEATURE] Add REFUSED label for metric bind_resolver_response_errors_total #125
