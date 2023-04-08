@@ -75,6 +75,15 @@ var (
 	}
 )
 
+func TestBindExporterJSONClient(t *testing.T) {
+	bindExporterTest{
+		server:  newJSONServer(),
+		groups:  []bind.StatisticGroup{bind.ServerStats, bind.ViewStats, bind.TaskStats},
+		version: "json",
+		include: combine([]string{`bind_up 1`}, serverStatsV3, viewStatsV3, taskStats),
+	}.run(t)
+}
+
 func TestBindExporterV2Client(t *testing.T) {
 	bindExporterTest{
 		server:  newV2Server(),
@@ -203,6 +212,21 @@ func newV3Server() *httptest.Server {
 		"/xml/v3/status": "fixtures/v3/status",
 		"/xml/v3/tasks":  "fixtures/v3/tasks",
 		"/xml/v3/zones":  "fixtures/v3/zones",
+	}
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if f, ok := m[r.RequestURI]; ok {
+			http.ServeFile(w, r, f)
+		} else {
+			http.NotFound(w, r)
+		}
+	}))
+}
+
+func newJSONServer() *httptest.Server {
+	m := map[string]string{
+		"/json/v1/server": "fixtures/json/server.json",
+		"/json/v1/tasks":  "fixtures/json/tasks.json",
+		"/json/v1/zones":  "fixtures/json/zones.json",
 	}
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if f, ok := m[r.RequestURI]; ok {

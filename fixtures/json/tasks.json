@@ -1,0 +1,11 @@
+{
+  "json-stats-version":"1.7",
+  "boot-time":"2021-07-15T05:11:08.926Z",
+  "config-time":"2021-07-15T05:11:08.972Z",
+  "current-time":"2023-04-08T17:09:34.885Z",
+  "version":"9.18.12-1-Debian",
+  "taskmgr":{
+    "tasks-running": 8,
+    "worker-threads": 16
+  }
+}
