@@ -19,6 +19,7 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -27,6 +28,7 @@ import (
 	"github.com/go-kit/log/level"
 	"github.com/prometheus-community/bind_exporter/bind"
 	"github.com/prometheus-community/bind_exporter/bind/auto"
+	"github.com/prometheus-community/bind_exporter/bind/json"
 	"github.com/prometheus-community/bind_exporter/bind/v2"
 	"github.com/prometheus-community/bind_exporter/bind/v3"
 	"github.com/prometheus/client_golang/prometheus"
@@ -396,6 +398,8 @@ type Exporter struct {
 func NewExporter(version, url string, timeout time.Duration, g []bind.StatisticGroup) *Exporter {
 	var c bind.Client
 	switch version {
+	case "json":
+		c = json.NewClient(url, &http.Client{Timeout: timeout})
 	case "xml.v2":
 		c = v2.NewClient(url, &http.Client{Timeout: timeout})
 	case "xml.v3":
@@ -459,10 +463,23 @@ func histogram(stats []bind.Counter) (map[float64]uint64, uint64, error) {
 				}
 			}
 
-			buckets[b/1000] = count + uint64(s.Counter)
-			count += uint64(s.Counter)
+			buckets[b/1000] = s.Counter
 		}
 	}
+
+	// Don't assume that QryRTT counters were in ascending order before summing them.
+	// JSON stats are unmarshaled into a map, which won't preserve the order that BIND renders.
+	keys := make([]float64, 0, len(buckets))
+	for k := range buckets {
+		keys = append(keys, k)
+	}
+	sort.Float64s(keys)
+
+	for _, k := range keys {
+		buckets[k] += count
+		count = buckets[k]
+	}
+
 	return buckets, count, nil
 }
 
@@ -518,7 +535,7 @@ func main() {
 		).Default("/run/named/named.pid").String()
 		bindVersion = kingpin.Flag("bind.stats-version",
 			"BIND statistics version. Can be detected automatically.",
-		).Default("auto").Enum("xml.v2", "xml.v3", "auto")
+		).Default("auto").Enum("json", "xml.v2", "xml.v3", "auto")
 		metricsPath = kingpin.Flag(
 			"web.telemetry-path", "Path under which to expose metrics",
 		).Default("/metrics").String()
