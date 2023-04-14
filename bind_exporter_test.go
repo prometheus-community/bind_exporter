@@ -90,15 +90,6 @@ func TestBindExporterV3Client(t *testing.T) {
 	}.run(t)
 }
 
-func TestBindExporterAutomaticClient(t *testing.T) {
-	bindExporterTest{
-		server:  newV3Server(),
-		groups:  []bind.StatisticGroup{bind.ServerStats},
-		version: "auto",
-		include: combine([]string{`bind_up 1`}, serverStats),
-	}.run(t)
-}
-
 func TestBindExporterBindFailure(t *testing.T) {
 	bindExporterTest{
 		server:  httptest.NewServer(http.HandlerFunc(http.NotFound)),

@@ -14,11 +14,6 @@
 package bind
 
 import (
-	"encoding/xml"
-	"fmt"
-	"net/http"
-	"net/url"
-	"path"
 	"time"
 )
 
@@ -26,47 +21,6 @@ import (
 // generic format.
 type Client interface {
 	Stats(...StatisticGroup) (Statistics, error)
-}
-
-// XMLClient is a generic BIND API client to retrieve statistics in XML format.
-type XMLClient struct {
-	url  string
-	http *http.Client
-}
-
-// NewXMLClient returns an initialized XMLClient.
-func NewXMLClient(url string, c *http.Client) *XMLClient {
-	return &XMLClient{
-		url:  url,
-		http: c,
-	}
-}
-
-// Get queries the given path and stores the result in the value pointed to by
-// v. The endpoint must return a valid XML representation which can be
-// unmarshaled into the provided value.
-func (c *XMLClient) Get(p string, v interface{}) error {
-	u, err := url.Parse(c.url)
-	if err != nil {
-		return fmt.Errorf("invalid URL %q: %s", c.url, err)
-	}
-	u.Path = path.Join(u.Path, p)
-
-	resp, err := c.http.Get(u.String())
-	if err != nil {
-		return fmt.Errorf("error querying stats: %s", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected status for %q: %s", u, resp.Status)
-	}
-
-	if err := xml.NewDecoder(resp.Body).Decode(v); err != nil {
-		return fmt.Errorf("failed to unmarshal XML response: %s", err)
-	}
-
-	return nil
 }
 
 const (
