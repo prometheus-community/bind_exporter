@@ -17,7 +17,7 @@ import (
 	"net/http"
 
 	"github.com/prometheus-community/bind_exporter/bind"
-	"github.com/prometheus-community/bind_exporter/bind/v3"
+	"github.com/prometheus-community/bind_exporter/bind/xml"
 )
 
 // Client is a client which automatically detects the statistics version of the
@@ -33,5 +33,5 @@ func NewClient(url string, c *http.Client) *Client {
 
 // Stats implements bind.Stats.
 func (c *Client) Stats(g ...bind.StatisticGroup) (bind.Statistics, error) {
-	return (&v3.Client{XMLClient: c.XMLClient}).Stats(g...)
+	return (&xml.Client{XMLClient: c.XMLClient}).Stats(g...)
 }
