@@ -165,10 +165,10 @@ func collect(c prometheus.Collector) ([]byte, error) {
 
 func newV3Server() *httptest.Server {
 	m := map[string]string{
-		"/xml/v3/server": "fixtures/v3/server",
-		"/xml/v3/status": "fixtures/v3/status",
-		"/xml/v3/tasks":  "fixtures/v3/tasks",
-		"/xml/v3/zones":  "fixtures/v3/zones",
+		"/xml/v3/server": "fixtures/xml/server.xml",
+		"/xml/v3/status": "fixtures/xml/status.xml",
+		"/xml/v3/tasks":  "fixtures/xml/tasks.xml",
+		"/xml/v3/zones":  "fixtures/xml/zones.xml",
 	}
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if f, ok := m[r.RequestURI]; ok {
