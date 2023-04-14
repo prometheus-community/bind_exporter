@@ -17,7 +17,6 @@ import (
 	"net/http"
 
 	"github.com/prometheus-community/bind_exporter/bind"
-	"github.com/prometheus-community/bind_exporter/bind/v2"
 	"github.com/prometheus-community/bind_exporter/bind/v3"
 )
 
@@ -34,8 +33,5 @@ func NewClient(url string, c *http.Client) *Client {
 
 // Stats implements bind.Stats.
 func (c *Client) Stats(g ...bind.StatisticGroup) (bind.Statistics, error) {
-	if err := c.Get(v3.StatusPath, &bind.Statistics{}); err == nil {
-		return (&v3.Client{XMLClient: c.XMLClient}).Stats(g...)
-	}
-	return (&v2.Client{XMLClient: c.XMLClient}).Stats(g...)
+	return (&v3.Client{XMLClient: c.XMLClient}).Stats(g...)
 }

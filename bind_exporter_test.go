@@ -27,7 +27,7 @@ import (
 )
 
 var (
-	serverStatsV2 = []string{
+	serverStats = []string{
 		`bind_boot_time_seconds 1.626325868e+09`,
 		`bind_incoming_queries_total{type="A"} 128417`,
 		`bind_incoming_requests_total{opcode="QUERY"} 37634`,
@@ -40,13 +40,11 @@ var (
 		`bind_zone_transfer_success_total 25`,
 		`bind_zone_transfer_failure_total 1`,
 		`bind_recursive_clients 76`,
-	}
-	serverStatsV3 = combine(serverStatsV2, []string{
 		`bind_config_time_seconds 1.626325868e+09`,
 		`bind_response_rcodes_total{rcode="NOERROR"} 989812`,
 		`bind_response_rcodes_total{rcode="NXDOMAIN"} 33958`,
-	})
-	viewStatsV2 = []string{
+	}
+	viewStats = []string{
 		`bind_resolver_cache_rrsets{type="A",view="_default"} 34324`,
 		`bind_resolver_queries_total{type="CNAME",view="_default"} 28`,
 		`bind_resolver_response_errors_total{error="FORMERR",view="_bind"} 0`,
@@ -65,11 +63,9 @@ var (
 		`bind_resolver_query_duration_seconds_bucket{view="_default",le="1.6"} 188409`,
 		`bind_resolver_query_duration_seconds_bucket{view="_default",le="+Inf"} 227755`,
 		`bind_zone_serial{view="_default",zone_name="TEST_ZONE"} 123`,
-	}
-	viewStatsV3 = combine(viewStatsV2, []string{
 		`bind_resolver_response_errors_total{error="REFUSED",view="_bind"} 17`,
 		`bind_resolver_response_errors_total{error="REFUSED",view="_default"} 5798`,
-	})
+	}
 	taskStats = []string{
 		`bind_tasks_running 8`,
 		`bind_worker_threads 16`,
@@ -81,17 +77,7 @@ func TestBindExporterJSONClient(t *testing.T) {
 		server:  newJSONServer(),
 		groups:  []bind.StatisticGroup{bind.ServerStats, bind.ViewStats, bind.TaskStats},
 		version: "json",
-		include: combine([]string{`bind_up 1`}, serverStatsV3, viewStatsV3, taskStats),
-	}.run(t)
-}
-
-func TestBindExporterV2Client(t *testing.T) {
-	bindExporterTest{
-		server:  newV2Server(),
-		groups:  []bind.StatisticGroup{bind.ServerStats, bind.ViewStats, bind.TaskStats},
-		version: "xml.v2",
-		include: combine([]string{`bind_up 1`}, serverStatsV2, viewStatsV2, taskStats),
-		exclude: []string{`bind_config_time_seconds`},
+		include: combine([]string{`bind_up 1`}, serverStats, viewStats, taskStats),
 	}.run(t)
 }
 
@@ -100,45 +86,25 @@ func TestBindExporterV3Client(t *testing.T) {
 		server:  newV3Server(),
 		groups:  []bind.StatisticGroup{bind.ServerStats, bind.ViewStats, bind.TaskStats},
 		version: "xml.v3",
-		include: combine([]string{`bind_up 1`}, serverStatsV3, viewStatsV3, taskStats),
+		include: combine([]string{`bind_up 1`}, serverStats, viewStats, taskStats),
 	}.run(t)
 }
 
 func TestBindExporterAutomaticClient(t *testing.T) {
-	for _, test := range []bindExporterTest{
-		{
-			server:  newV2Server(),
-			groups:  []bind.StatisticGroup{bind.ServerStats},
-			version: "auto",
-			include: combine([]string{`bind_up 1`}, serverStatsV2),
-		},
-		{
-			server:  newV3Server(),
-			groups:  []bind.StatisticGroup{bind.ServerStats},
-			version: "auto",
-			include: combine([]string{`bind_up 1`}, serverStatsV3),
-		},
-	} {
-		test.run(t)
-	}
-}
-
-func TestBindExporterStatisticGroups(t *testing.T) {
 	bindExporterTest{
-		server:  newV2Server(),
+		server:  newV3Server(),
 		groups:  []bind.StatisticGroup{bind.ServerStats},
-		version: "xml.v2",
-		include: combine([]string{`bind_up 1`}, serverStatsV2),
-		exclude: combine(viewStatsV2, taskStats, []string{`bind_tasks_running 0`, `bind_worker_threads 0`}),
+		version: "auto",
+		include: combine([]string{`bind_up 1`}, serverStats),
 	}.run(t)
 }
 
 func TestBindExporterBindFailure(t *testing.T) {
 	bindExporterTest{
 		server:  httptest.NewServer(http.HandlerFunc(http.NotFound)),
-		version: "xml.v2",
+		version: "xml.v3",
 		include: []string{`bind_up 0`},
-		exclude: serverStatsV2,
+		exclude: serverStats,
 	}.run(t)
 }
 
@@ -195,16 +161,6 @@ func collect(c prometheus.Collector) ([]byte, error) {
 		}
 	}
 	return b.Bytes(), nil
-}
-
-func newV2Server() *httptest.Server {
-	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.RequestURI == "/" {
-			http.ServeFile(w, r, "fixtures/v2.xml")
-		} else {
-			http.NotFound(w, r)
-		}
-	}))
 }
 
 func newV3Server() *httptest.Server {
