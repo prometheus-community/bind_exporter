@@ -69,6 +69,14 @@ var (
 		`bind_resolver_response_errors_total{error="REFUSED",view="_bind"} 17`,
 		`bind_resolver_response_errors_total{error="REFUSED",view="_default"} 5798`,
 	})
+
+	zoneStatsV3 = []string{
+		`bind_zone_incoming_rcodes_total{rcode="QrySuccess",zone_name="TEST_ZONE"} 163729`,
+		`bind_zone_incoming_rcodes_total{rcode="QryNXDOMAIN",zone_name="TEST_ZONE"} 4512`,
+		`bind_zone_incoming_queries_total{type="A",zone_name="TEST_ZONE"} 123123`,
+		`bind_zone_incoming_queries_total{type="CNAME",zone_name="TEST_ZONE"} 14953`,
+	}
+
 	taskStats = []string{
 		`bind_tasks_running 8`,
 		`bind_worker_threads 16`,
@@ -99,7 +107,7 @@ func TestBindExporterV3Client(t *testing.T) {
 		server:  newV3Server(),
 		groups:  []bind.StatisticGroup{bind.ServerStats, bind.ViewStats, bind.TaskStats},
 		version: "xml.v3",
-		include: combine([]string{`bind_up 1`}, serverStatsV3, viewStatsV3, taskStats),
+		include: combine([]string{`bind_up 1`}, serverStatsV3, viewStatsV3, zoneStatsV3, taskStats),
 	}.run(t)
 }
 

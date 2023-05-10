@@ -29,8 +29,8 @@ import (
 	"github.com/prometheus-community/bind_exporter/bind"
 	"github.com/prometheus-community/bind_exporter/bind/auto"
 	"github.com/prometheus-community/bind_exporter/bind/json"
-	"github.com/prometheus-community/bind_exporter/bind/v2"
-	"github.com/prometheus-community/bind_exporter/bind/v3"
+	v2 "github.com/prometheus-community/bind_exporter/bind/v2"
+	v3 "github.com/prometheus-community/bind_exporter/bind/v3"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -220,6 +220,16 @@ var (
 		"Zone serial number.",
 		[]string{"view", "zone_name"}, nil,
 	)
+	zoneRcode = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "zone_incoming_rcodes_total"),
+		"Number of incoming DNS requests per zone.",
+		[]string{"zone_name", "rcode"}, nil,
+	)
+	zoneQtype = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "zone_incoming_queries_total"),
+		"Number of incoming DNS requests per zone.",
+		[]string{"zone_name", "type"}, nil,
+	)
 )
 
 type collectorConstructor func(*bind.Statistics) prometheus.Collector
@@ -354,6 +364,24 @@ func (c *viewCollector) Collect(ch chan<- prometheus.Metric) {
 			if suint, err := strconv.ParseUint(z.Serial, 10, 64); err == nil {
 				ch <- prometheus.MustNewConstMetric(
 					zoneSerial, prometheus.CounterValue, float64(suint), v.Name, z.Name,
+				)
+			}
+		}
+	}
+	for _, v := range c.stats.ZoneViews {
+		for _, z := range v.ZoneData {
+			for _, x := range z.ZoneRcode {
+				ch <- prometheus.MustNewConstMetric(
+					zoneRcode, prometheus.CounterValue, float64(x.Counter), z.Name, x.Name,
+				)
+			}
+		}
+	}
+	for _, v := range c.stats.ZoneViews {
+		for _, z := range v.ZoneData {
+			for _, x := range z.ZoneQtype {
+				ch <- prometheus.MustNewConstMetric(
+					zoneQtype, prometheus.CounterValue, float64(x.Counter), z.Name, x.Name,
 				)
 			}
 		}
