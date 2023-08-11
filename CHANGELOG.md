@@ -1,3 +1,7 @@
+## 0.7.0 / 2023-08-11
+
+* [FEATURE] Implement JSON stats v1 parsing #169
+
 ## 0.6.1 / 2023-03-22
 
 * [BUGFIX] Fix unmarshall error for negative values #166
