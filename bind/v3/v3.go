@@ -68,6 +68,13 @@ type ZoneView struct {
 	Zones []ZoneCounter `xml:"zones>zone"`
 }
 
+type ZoneCounter struct {
+	Name       string     `xml:"name,attr"`
+	Rdataclass string     `xml:"rdataclass,attr"`
+	Serial     string     `xml:"serial"`
+	Counters   []Counters `xml:"counters"`
+}
+
 type Counters struct {
 	Type     string         `xml:"type,attr"`
 	Counters []bind.Counter `xml:"counter"`
@@ -76,12 +83,6 @@ type Counters struct {
 type Counter struct {
 	Name    string `xml:"name"`
 	Counter uint64 `xml:"counter"`
-}
-
-type ZoneCounter struct {
-	Name       string `xml:"name,attr"`
-	Rdataclass string `xml:"rdataclass,attr"`
-	Serial     string `xml:"serial"`
 }
 
 // Client implements bind.Client and can be used to query a BIND v3 API.
@@ -158,6 +159,14 @@ func (c *Client) Stats(groups ...bind.StatisticGroup) (bind.Statistics, error) {
 			z := bind.ZoneCounter{
 				Name:   zone.Name,
 				Serial: zone.Serial,
+			}
+			for _, x := range zone.Counters {
+				switch x.Type {
+				case rcode:
+					z.ZoneRcode = x.Counters
+				case qtype:
+					z.ZoneQtype = x.Counters
+				}
 			}
 			v.ZoneData = append(v.ZoneData, z)
 		}

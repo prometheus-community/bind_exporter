@@ -7,6 +7,14 @@
         <zone name="TEST_ZONE" rdataclass="IN">
           <type>builtin</type>
           <serial>123</serial>
+          <counters type="rcode">
+            <counter name="QryNXDOMAIN">4512</counter>
+            <counter name="QrySuccess">163729</counter>
+          </counters>
+          <counters type="qtype">
+            <counter name="A">123123</counter>
+            <counter name="CNAME">14953</counter>
+          </counters>
         </zone>
       </zones>
     </view>
