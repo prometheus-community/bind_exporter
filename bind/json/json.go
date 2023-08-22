@@ -102,7 +102,7 @@ func (c *Client) Get(p string, v interface{}) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected status %s", resp.Status)
+		return fmt.Errorf("unexpected status for %q: %s", u, resp.Status)
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(v); err != nil {
