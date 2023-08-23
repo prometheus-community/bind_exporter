@@ -49,8 +49,6 @@ const (
 )
 
 var (
-	logger = log.NewNopLogger()
-
 	up = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "up"),
 		"Was the Bind instance query successful?",
@@ -224,15 +222,16 @@ var (
 	)
 )
 
-type collectorConstructor func(*bind.Statistics) prometheus.Collector
+type collectorConstructor func(log.Logger, *bind.Statistics) prometheus.Collector
 
 type serverCollector struct {
-	stats *bind.Statistics
+	logger log.Logger
+	stats  *bind.Statistics
 }
 
 // newServerCollector implements collectorConstructor.
-func newServerCollector(s *bind.Statistics) prometheus.Collector {
-	return &serverCollector{stats: s}
+func newServerCollector(logger log.Logger, s *bind.Statistics) prometheus.Collector {
+	return &serverCollector{logger: logger, stats: s}
 }
 
 // Describe implements prometheus.Collector.
@@ -297,12 +296,13 @@ func (c *serverCollector) Collect(ch chan<- prometheus.Metric) {
 }
 
 type viewCollector struct {
-	stats *bind.Statistics
+	logger log.Logger
+	stats  *bind.Statistics
 }
 
 // newViewCollector implements collectorConstructor.
-func newViewCollector(s *bind.Statistics) prometheus.Collector {
-	return &viewCollector{stats: s}
+func newViewCollector(logger log.Logger, s *bind.Statistics) prometheus.Collector {
+	return &viewCollector{logger: logger, stats: s}
 }
 
 // Describe implements prometheus.Collector.
@@ -347,7 +347,7 @@ func (c *viewCollector) Collect(ch chan<- prometheus.Metric) {
 				resolverQueryDuration, count, math.NaN(), buckets, v.Name,
 			)
 		} else {
-			level.Warn(logger).Log("msg", "Error parsing RTT", "err", err)
+			level.Warn(c.logger).Log("msg", "Error parsing RTT", "err", err)
 		}
 	}
 
@@ -363,12 +363,13 @@ func (c *viewCollector) Collect(ch chan<- prometheus.Metric) {
 }
 
 type taskCollector struct {
-	stats *bind.Statistics
+	logger log.Logger
+	stats  *bind.Statistics
 }
 
 // newTaskCollector implements collectorConstructor.
-func newTaskCollector(s *bind.Statistics) prometheus.Collector {
-	return &taskCollector{stats: s}
+func newTaskCollector(logger log.Logger, s *bind.Statistics) prometheus.Collector {
+	return &taskCollector{logger: logger, stats: s}
 }
 
 // Describe implements prometheus.Collector.
@@ -394,10 +395,11 @@ type Exporter struct {
 	client     bind.Client
 	collectors []collectorConstructor
 	groups     []bind.StatisticGroup
+	logger     log.Logger
 }
 
 // NewExporter returns an initialized Exporter.
-func NewExporter(version, url string, timeout time.Duration, g []bind.StatisticGroup) *Exporter {
+func NewExporter(logger log.Logger, version, url string, timeout time.Duration, g []bind.StatisticGroup) *Exporter {
 	var c bind.Client
 	switch version {
 	case "json":
@@ -422,7 +424,7 @@ func NewExporter(version, url string, timeout time.Duration, g []bind.StatisticG
 		}
 	}
 
-	return &Exporter{client: c, collectors: cs, groups: g}
+	return &Exporter{logger: logger, client: c, collectors: cs, groups: g}
 }
 
 // Describe describes all the metrics ever exported by the bind exporter. It
@@ -430,7 +432,7 @@ func NewExporter(version, url string, timeout time.Duration, g []bind.StatisticG
 func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- up
 	for _, c := range e.collectors {
-		c(&bind.Statistics{}).Describe(ch)
+		c(e.logger, &bind.Statistics{}).Describe(ch)
 	}
 }
 
@@ -440,11 +442,11 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	status := 0.
 	if stats, err := e.client.Stats(e.groups...); err == nil {
 		for _, c := range e.collectors {
-			c(&stats).Collect(ch)
+			c(e.logger, &stats).Collect(ch)
 		}
 		status = 1
 	} else {
-		level.Error(logger).Log("msg", "Couldn't retrieve BIND stats", "err", err)
+		level.Error(e.logger).Log("msg", "Couldn't retrieve BIND stats", "err", err)
 	}
 	ch <- prometheus.MustNewConstMetric(up, prometheus.GaugeValue, status)
 }
@@ -558,7 +560,7 @@ func main() {
 	kingpin.Version(version.Print(exporter))
 	kingpin.HelpFlag.Short('h')
 	kingpin.Parse()
-	logger = promlog.New(promlogConfig)
+	logger := promlog.New(promlogConfig)
 
 	level.Info(logger).Log("msg", "Starting bind_exporter", "version", version.Info())
 	level.Info(logger).Log("msg", "Build context", "build_context", version.BuildContext())
@@ -566,7 +568,7 @@ func main() {
 
 	prometheus.MustRegister(
 		version.NewCollector(exporter),
-		NewExporter(*bindVersion, *bindURI, *bindTimeout, groups),
+		NewExporter(logger, *bindVersion, *bindURI, *bindTimeout, groups),
 	)
 	if *bindPidFile != "" {
 		procExporter := collectors.NewProcessCollector(collectors.ProcessCollectorOpts{
