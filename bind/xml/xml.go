@@ -11,10 +11,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package v3
+package xml
 
 import (
+	"encoding/xml"
+	"fmt"
 	"net/http"
+	"net/url"
+	"path"
 	"time"
 
 	"github.com/prometheus-community/bind_exporter/bind"
@@ -40,11 +44,9 @@ const (
 )
 
 type Statistics struct {
-	Memory    struct{}         `xml:"memory"`
-	Server    Server           `xml:"server"`
-	Socketmgr struct{}         `xml:"socketmgr"`
-	Taskmgr   bind.TaskManager `xml:"taskmgr"`
-	Views     []View           `xml:"views>view"`
+	Server  Server           `xml:"server"`
+	Taskmgr bind.TaskManager `xml:"taskmgr"`
+	Views   []View           `xml:"views>view"`
 }
 
 type ZoneStatistics struct {
@@ -84,14 +86,45 @@ type ZoneCounter struct {
 	Serial     string `xml:"serial"`
 }
 
-// Client implements bind.Client and can be used to query a BIND v3 API.
+// Client implements bind.Client and can be used to query a BIND XML v3 API.
 type Client struct {
-	*bind.XMLClient
+	url  string
+	http *http.Client
 }
 
 // NewClient returns an initialized Client.
 func NewClient(url string, c *http.Client) *Client {
-	return &Client{XMLClient: bind.NewXMLClient(url, c)}
+	return &Client{
+		url:  url,
+		http: c,
+	}
+}
+
+// Get queries the given path and stores the result in the value pointed to by
+// v. The endpoint must return a valid XML representation which can be
+// unmarshaled into the provided value.
+func (c *Client) Get(p string, v interface{}) error {
+	u, err := url.Parse(c.url)
+	if err != nil {
+		return fmt.Errorf("invalid URL %q: %s", c.url, err)
+	}
+	u.Path = path.Join(u.Path, p)
+
+	resp, err := c.http.Get(u.String())
+	if err != nil {
+		return fmt.Errorf("error querying stats: %s", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status %s", resp.Status)
+	}
+
+	if err := xml.NewDecoder(resp.Body).Decode(v); err != nil {
+		return fmt.Errorf("failed to unmarshal XML response: %s", err)
+	}
+
+	return nil
 }
 
 // Stats implements bind.Stats.

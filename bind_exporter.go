@@ -28,10 +28,8 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/prometheus-community/bind_exporter/bind"
-	"github.com/prometheus-community/bind_exporter/bind/auto"
 	"github.com/prometheus-community/bind_exporter/bind/json"
-	"github.com/prometheus-community/bind_exporter/bind/v2"
-	"github.com/prometheus-community/bind_exporter/bind/v3"
+	"github.com/prometheus-community/bind_exporter/bind/xml"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -402,14 +400,10 @@ type Exporter struct {
 func NewExporter(logger log.Logger, version, url string, timeout time.Duration, g []bind.StatisticGroup) *Exporter {
 	var c bind.Client
 	switch version {
-	case "json":
-		c = json.NewClient(url, &http.Client{Timeout: timeout})
-	case "xml.v2":
-		c = v2.NewClient(url, &http.Client{Timeout: timeout})
-	case "xml.v3":
-		c = v3.NewClient(url, &http.Client{Timeout: timeout})
+	case "xml", "xml.v3":
+		c = xml.NewClient(url, &http.Client{Timeout: timeout})
 	default:
-		c = auto.NewClient(url, &http.Client{Timeout: timeout})
+		c = json.NewClient(url, &http.Client{Timeout: timeout})
 	}
 
 	var cs []collectorConstructor
@@ -538,8 +532,8 @@ func main() {
 			"Path to BIND's pid file to export process information",
 		).Default("/run/named/named.pid").String()
 		bindVersion = kingpin.Flag("bind.stats-version",
-			"BIND statistics version. Can be detected automatically.",
-		).Default("auto").Enum("json", "xml.v2", "xml.v3", "auto")
+			"BIND statistics channel",
+		).Default("json").Enum("json", "xml", "xml.v3", "auto")
 		metricsPath = kingpin.Flag(
 			"web.telemetry-path", "Path under which to expose metrics",
 		).Default("/metrics").String()
