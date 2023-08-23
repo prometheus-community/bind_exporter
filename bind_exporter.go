@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/alecthomas/kingpin/v2"
+	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/prometheus-community/bind_exporter/bind"
 	"github.com/prometheus-community/bind_exporter/bind/auto"
@@ -35,6 +36,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/promlog"
+	"github.com/prometheus/common/promlog/flag"
 	"github.com/prometheus/common/version"
 	"github.com/prometheus/exporter-toolkit/web"
 	webflag "github.com/prometheus/exporter-toolkit/web/kingpinflag"
@@ -47,7 +49,7 @@ const (
 )
 
 var (
-	logger = promlog.New(&promlog.Config{})
+	logger = log.NewNopLogger()
 
 	up = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "up"),
@@ -551,9 +553,12 @@ func main() {
 		bind.ServerStats, bind.ViewStats, bind.TaskStats,
 	}).String()).SetValue(&groups)
 
+	promlogConfig := &promlog.Config{}
+	flag.AddFlags(kingpin.CommandLine, promlogConfig)
 	kingpin.Version(version.Print(exporter))
 	kingpin.HelpFlag.Short('h')
 	kingpin.Parse()
+	logger = promlog.New(promlogConfig)
 
 	level.Info(logger).Log("msg", "Starting bind_exporter", "version", version.Info())
 	level.Info(logger).Log("msg", "Build context", "build_context", version.BuildContext())
