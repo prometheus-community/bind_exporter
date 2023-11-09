@@ -48,13 +48,14 @@ type Statistics struct {
 
 // Server represents BIND server statistics.
 type Server struct {
-	BootTime         time.Time
-	ConfigTime       time.Time
-	IncomingQueries  []Counter
-	IncomingRequests []Counter
-	NameServerStats  []Counter
-	ZoneStatistics   []Counter
-	ServerRcodes     []Counter
+	BootTime            time.Time
+	ConfigTime          time.Time
+	IncomingQueries     []Counter
+	IncomingZoneQueries []ZoneViewCounter
+	IncomingRequests    []Counter
+	NameServerStats     []Counter
+	ZoneStatistics      []Counter
+	ServerRcodes        []Counter
 }
 
 // View represents statistics for a single BIND view.
@@ -87,6 +88,13 @@ type Counter struct {
 type ZoneCounter struct {
 	Name   string
 	Serial string
+}
+
+type ZoneViewCounter struct {
+	Counter uint64 `xml:"counter"`
+	Zone    string `xml:"zone"`
+	View    string `xml:"view"`
+	Type    string `xml:"type"`
 }
 
 // Gauge represents a single gauge value.

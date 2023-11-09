@@ -67,6 +67,11 @@ var (
 		"Number of incoming DNS queries.",
 		[]string{"type"}, nil,
 	)
+	incomingZoneQueries = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "imcoming_zone_queries_total"),
+		"Number of incoming DNS queries in zone.",
+		[]string{"type", "zone", "view"}, nil,
+	)
 	incomingRequests = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "incoming_requests_total"),
 		"Number of incoming DNS requests.",
@@ -237,6 +242,7 @@ func (c *serverCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- bootTime
 	ch <- configTime
 	ch <- incomingQueries
+	ch <- incomingZoneQueries
 	ch <- incomingRequests
 	ch <- serverQueryErrors
 	ch <- serverResponses
@@ -259,6 +265,11 @@ func (c *serverCollector) Collect(ch chan<- prometheus.Metric) {
 	for _, s := range c.stats.Server.IncomingQueries {
 		ch <- prometheus.MustNewConstMetric(
 			incomingQueries, prometheus.CounterValue, float64(s.Counter), s.Name,
+		)
+	}
+	for _, s := range c.stats.Server.IncomingZoneQueries {
+		ch <- prometheus.MustNewConstMetric(
+			incomingZoneQueries, prometheus.CounterValue, float64(s.Counter), s.Type, s.Zone, s.View,
 		)
 	}
 	for _, s := range c.stats.Server.IncomingRequests {

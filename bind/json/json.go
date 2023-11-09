@@ -57,9 +57,11 @@ type Statistics struct {
 type ZoneStatistics struct {
 	Views map[string]struct {
 		Zones []struct {
-			Name   string `json:"name"`
-			Class  string `json:"class"`
-			Serial uint32 `json:"serial"` // RFC 1035 specifies SOA serial number as uint32
+			Name   string            `json:"name"`
+			Class  string            `json:"class"`
+			Serial uint32            `json:"serial"` // RFC 1035 specifies SOA serial number as uint32
+			Rcodes map[string]uint64 `json:"rcodes"`
+			Qtypes map[string]uint64 `json:"qtypes"`
 		} `json:"zones"`
 	} `json:"views"`
 }
@@ -178,6 +180,18 @@ func (c *Client) Stats(groups ...bind.StatisticGroup) (bind.Statistics, error) {
 				Serial: strconv.FormatUint(uint64(zone.Serial), 10),
 			}
 			v.ZoneData = append(v.ZoneData, z)
+
+			for k, v := range zone.Qtypes {
+				s.Server.IncomingZoneQueries = append(
+					s.Server.IncomingZoneQueries,
+					bind.ZoneViewCounter{
+						Counter: v,
+						Zone:    zone.Name,
+						View:    name,
+						Type:    k,
+					},
+				)
+			}
 		}
 		s.ZoneViews = append(s.ZoneViews, v)
 	}
