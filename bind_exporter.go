@@ -546,7 +546,7 @@ func main() {
 	kingpin.Flag("bind.stats-groups",
 		"Comma-separated list of statistics to collect",
 	).Default((&statisticGroups{
-		bind.ServerStats, bind.ViewStats, bind.TaskStats,
+		bind.ServerStats, bind.ViewStats,
 	}).String()).SetValue(&groups)
 
 	promlogConfig := &promlog.Config{}
