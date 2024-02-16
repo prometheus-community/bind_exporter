@@ -20,6 +20,7 @@ import (
 	"net/url"
 	"path"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/prometheus-community/bind_exporter/bind"
@@ -30,6 +31,8 @@ const (
 	ServerPath = "/json/v1/server"
 	// TasksPath is the HTTP path of the JSON v1 tasks resource.
 	TasksPath = "/json/v1/tasks"
+	// TrafficPath is the HTTP path of the JSON v1 traffic resource.
+	TrafficPath = "/json/v1/traffic"
 	// ZonesPath is the HTTP path of the JSON v1 zones resource.
 	ZonesPath = "/json/v1/zones"
 )
@@ -69,6 +72,19 @@ type TaskStatistics struct {
 		TasksRunning  uint64 `json:"tasks-running"`
 		WorkerThreads uint64 `json:"worker-threads"`
 	} `json:"taskmgr"`
+}
+
+type TrafficStatistics struct {
+	Traffic struct {
+		ReceivedUDPv4 map[string]uint64 `json:"dns-udp-requests-sizes-received-ipv4"`
+		SentUDPv4     map[string]uint64 `json:"dns-udp-responses-sizes-sent-ipv4"`
+		ReceivedTCPv4 map[string]uint64 `json:"dns-tcp-requests-sizes-sent-ipv4"`
+		SentTCPv4     map[string]uint64 `json:"dns-tcp-responses-sizes-sent-ipv4"`
+		ReceivedUDPv6 map[string]uint64 `json:"dns-udp-requests-sizes-received-ipv6"`
+		SentUDPv6     map[string]uint64 `json:"dns-udp-responses-sizes-sent-ipv6"`
+		ReceivedTCPv6 map[string]uint64 `json:"dns-tcp-requests-sizes-sent-ipv6"`
+		SentTCPv6     map[string]uint64 `json:"dns-tcp-responses-sizes-sent-ipv6"`
+	} `json:"traffic"`
 }
 
 // Client implements bind.Client and can be used to query a BIND JSON v1 API.
@@ -191,5 +207,76 @@ func (c *Client) Stats(groups ...bind.StatisticGroup) (bind.Statistics, error) {
 		s.TaskManager.ThreadModel.WorkerThreads = taskstats.TaskMgr.WorkerThreads
 	}
 
+	if m[bind.TrafficStats] {
+		var trafficStats TrafficStatistics
+		if err := c.Get(TrafficPath, &trafficStats); err != nil {
+			return s, err
+		}
+
+		var err error
+
+		// Make IPv4 traffic histograms.
+		if s.TrafficHistograms.ReceivedUDPv4, err = parseTrafficHist(trafficStats.Traffic.ReceivedUDPv4, bind.TrafficInMaxSize); err != nil {
+			return s, err
+		}
+		if s.TrafficHistograms.SentUDPv4, err = parseTrafficHist(trafficStats.Traffic.SentUDPv4, bind.TrafficOutMaxSize); err != nil {
+			return s, err
+		}
+		if s.TrafficHistograms.ReceivedTCPv4, err = parseTrafficHist(trafficStats.Traffic.ReceivedTCPv4, bind.TrafficInMaxSize); err != nil {
+			return s, err
+		}
+		if s.TrafficHistograms.SentTCPv4, err = parseTrafficHist(trafficStats.Traffic.SentTCPv4, bind.TrafficOutMaxSize); err != nil {
+			return s, err
+		}
+
+		// Make IPv6 traffic histograms.
+		if s.TrafficHistograms.ReceivedUDPv6, err = parseTrafficHist(trafficStats.Traffic.ReceivedUDPv6, bind.TrafficInMaxSize); err != nil {
+			return s, err
+		}
+		if s.TrafficHistograms.SentUDPv6, err = parseTrafficHist(trafficStats.Traffic.SentUDPv6, bind.TrafficOutMaxSize); err != nil {
+			return s, err
+		}
+		if s.TrafficHistograms.ReceivedTCPv6, err = parseTrafficHist(trafficStats.Traffic.ReceivedTCPv6, bind.TrafficInMaxSize); err != nil {
+			return s, err
+		}
+		if s.TrafficHistograms.SentTCPv6, err = parseTrafficHist(trafficStats.Traffic.SentTCPv6, bind.TrafficOutMaxSize); err != nil {
+			return s, err
+		}
+	}
+
 	return s, nil
+}
+
+func parseTrafficHist(traffic map[string]uint64, maxBucket uint) ([]uint64, error) {
+	trafficHist := make([]uint64, maxBucket/bind.TrafficBucketSize)
+
+	for k, v := range traffic {
+		// Keys are in the format "lowerBound-upperBound". We are only interested in the upper
+		// bound.
+		parts := strings.Split(k, "-")
+		if len(parts) != 2 {
+			return nil, fmt.Errorf("malformed traffic bucket range: %q", k)
+		}
+
+		upperBound, err := strconv.ParseUint(parts[1], 10, 16)
+		if err != nil {
+			return nil, fmt.Errorf("cannot convert bucket upper bound to uint: %w", err)
+		}
+
+		if (upperBound+1)%bind.TrafficBucketSize != 0 {
+			return nil, fmt.Errorf("upper bucket bound is not a multiple of %d minus one: %d",
+				bind.TrafficBucketSize, upperBound)
+		}
+
+		if upperBound < uint64(maxBucket) {
+			// idx is offset, since there is no 0-16 bucket reported by BIND.
+			idx := (upperBound+1)/bind.TrafficBucketSize - 2
+			trafficHist[idx] += v
+		} else {
+			// Final slice element aggregates packet sizes from maxBucket to +Inf.
+			trafficHist[len(trafficHist)-1] += v
+		}
+	}
+
+	return trafficHist, nil
 }

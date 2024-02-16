@@ -218,6 +218,16 @@ var (
 		"Zone serial number.",
 		[]string{"view", "zone_name"}, nil,
 	)
+	trafficReceived = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "traffic", "received_size"),
+		"Received traffic packet sizes.",
+		[]string{"transport"}, nil,
+	)
+	trafficSent = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "traffic", "sent_size"),
+		"Received traffic packet sizes.",
+		[]string{"transport"}, nil,
+	)
 )
 
 type collectorConstructor func(log.Logger, *bind.Statistics) prometheus.Collector
@@ -387,6 +397,87 @@ func (c *taskCollector) Collect(ch chan<- prometheus.Metric) {
 	)
 }
 
+type trafficCollector struct {
+	logger log.Logger
+	stats  *bind.Statistics
+}
+
+// newTrafficCollector implements collectorConstructor.
+func newTrafficCollector(logger log.Logger, s *bind.Statistics) prometheus.Collector {
+	return &trafficCollector{logger: logger, stats: s}
+}
+
+// Describe implements prometheus.Collector.
+func (c *trafficCollector) Describe(ch chan<- *prometheus.Desc) {
+	ch <- trafficReceived
+	ch <- trafficSent
+}
+
+// Collect implements prometheus.Collector.
+func (c *trafficCollector) Collect(ch chan<- prometheus.Metric) {
+	// IPv4 traffic histograms.
+	buckets, count := c.makeHistogram(c.stats.TrafficHistograms.ReceivedUDPv4)
+	ch <- prometheus.MustNewConstHistogram(
+		trafficReceived, count, math.NaN(), buckets, "udpv4",
+	)
+	buckets, count = c.makeHistogram(c.stats.TrafficHistograms.SentUDPv4)
+	ch <- prometheus.MustNewConstHistogram(
+		trafficSent, count, math.NaN(), buckets, "udpv4",
+	)
+	buckets, count = c.makeHistogram(c.stats.TrafficHistograms.ReceivedTCPv4)
+	ch <- prometheus.MustNewConstHistogram(
+		trafficReceived, count, math.NaN(), buckets, "tcpv4",
+	)
+	buckets, count = c.makeHistogram(c.stats.TrafficHistograms.SentTCPv4)
+	ch <- prometheus.MustNewConstHistogram(
+		trafficSent, count, math.NaN(), buckets, "tcpv4",
+	)
+
+	// IPv6 traffic histograms.
+	buckets, count = c.makeHistogram(c.stats.TrafficHistograms.ReceivedUDPv6)
+	ch <- prometheus.MustNewConstHistogram(
+		trafficReceived, count, math.NaN(), buckets, "udpv6",
+	)
+	buckets, count = c.makeHistogram(c.stats.TrafficHistograms.SentUDPv6)
+	ch <- prometheus.MustNewConstHistogram(
+		trafficSent, count, math.NaN(), buckets, "udpv6",
+	)
+	buckets, count = c.makeHistogram(c.stats.TrafficHistograms.ReceivedTCPv6)
+	ch <- prometheus.MustNewConstHistogram(
+		trafficReceived, count, math.NaN(), buckets, "tcpv6",
+	)
+	buckets, count = c.makeHistogram(c.stats.TrafficHistograms.SentTCPv6)
+	ch <- prometheus.MustNewConstHistogram(
+		trafficSent, count, math.NaN(), buckets, "tcpv6",
+	)
+}
+
+// makeHistogram translates the non-aggregated bucket slice into an aggregated map, suitable for
+// use by prometheus.MustNewConstHistogram().
+func (c *trafficCollector) makeHistogram(rawBuckets []uint64) (map[float64]uint64, uint64) {
+	var (
+		buckets = map[float64]uint64{}
+		count   uint64
+	)
+
+	for i, v := range rawBuckets {
+		if v > 0 {
+			var idx float64
+
+			if i == len(rawBuckets)-1 {
+				idx = math.Inf(1)
+			} else {
+				idx = float64((i+2)*bind.TrafficBucketSize) - 1
+			}
+
+			count += v
+			buckets[idx] = count
+		}
+	}
+
+	return buckets, count
+}
+
 // Exporter collects Binds stats from the given server and exports them using
 // the prometheus metrics package.
 type Exporter struct {
@@ -411,10 +502,12 @@ func NewExporter(logger log.Logger, version, url string, timeout time.Duration, 
 		switch g {
 		case bind.ServerStats:
 			cs = append(cs, newServerCollector)
-		case bind.ViewStats:
-			cs = append(cs, newViewCollector)
 		case bind.TaskStats:
 			cs = append(cs, newTaskCollector)
+		case bind.TrafficStats:
+			cs = append(cs, newTrafficCollector)
+		case bind.ViewStats:
+			cs = append(cs, newViewCollector)
 		}
 	}
 
@@ -503,10 +596,12 @@ func (s *statisticGroups) Set(value string) error {
 		switch dt {
 		case string(bind.ServerStats):
 			sg = bind.ServerStats
-		case string(bind.ViewStats):
-			sg = bind.ViewStats
 		case string(bind.TaskStats):
 			sg = bind.TaskStats
+		case string(bind.TrafficStats):
+			sg = bind.TrafficStats
+		case string(bind.ViewStats):
+			sg = bind.ViewStats
 		default:
 			return fmt.Errorf("unknown stats group %q", dt)
 		}
@@ -544,7 +639,8 @@ func main() {
 	toolkitFlags := webflag.AddFlags(kingpin.CommandLine, ":9119")
 
 	kingpin.Flag("bind.stats-groups",
-		"Comma-separated list of statistics to collect",
+		"Comma-separated list of statistics to collect. "+
+			"One or more of: [server, tasks, traffic, view]",
 	).Default((&statisticGroups{
 		bind.ServerStats, bind.ViewStats,
 	}).String()).SetValue(&groups)
