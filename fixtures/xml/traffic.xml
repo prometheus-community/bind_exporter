@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="/bind9.xsl"?>
+<statistics version="3.14">
+  <server>
+    <boot-time>2024-02-04T17:26:28.754Z</boot-time>
+    <config-time>2024-02-04T17:26:28.846Z</config-time>
+    <current-time>2024-02-16T23:35:08.782Z</current-time>
+    <version>9.19.19-1-Debian</version>
+  </server>
+  <traffic>
+    <ipv4>
+      <udp>
+        <counters type="request-size">
+          <counter name="16-31">9992</counter>
+          <counter name="32-47">72214</counter>
+          <counter name="48-63">26413</counter>
+          <counter name="64-79">1011</counter>
+          <counter name="80-95">53</counter>
+          <counter name="96-111">5</counter>
+          <counter name="112-127">3</counter>
+        </counters>
+        <counters type="response-size">
+          <counter name="16-31">11</counter>
+          <counter name="32-47">655</counter>
+          <counter name="48-63">9372</counter>
+          <counter name="64-79">8509</counter>
+          <counter name="80-95">15889</counter>
+          <counter name="96-111">18710</counter>
+          <counter name="112-127">6369</counter>
+          <counter name="128-143">7446</counter>
+          <counter name="144-159">5097</counter>
+          <counter name="160-175">6053</counter>
+          <counter name="176-191">4761</counter>
+          <counter name="192-207">3082</counter>
+          <counter name="208-223">3275</counter>
+          <counter name="224-239">4232</counter>
+          <counter name="240-255">1326</counter>
+          <counter name="256-271">1439</counter>
+          <counter name="272-287">353</counter>
+          <counter name="288-303">441</counter>
+          <counter name="304-319">633</counter>
+          <counter name="320-335">32</counter>
+          <counter name="336-351">16</counter>
+          <counter name="352-367">16</counter>
+          <counter name="368-383">76</counter>
+          <counter name="384-399">27</counter>
+          <counter name="400-415">40</counter>
+          <counter name="416-431">39</counter>
+          <counter name="432-447">19</counter>
+          <counter name="464-479">33</counter>
+        </counters>
+      </udp>
+      <tcp>
+        <counters type="request-size">
+          <counter name="16-31">18600</counter>
+          <counter name="32-47">93199</counter>
+          <counter name="48-63">22292</counter>
+          <counter name="64-79">707</counter>
+          <counter name="80-95">3</counter>
+        </counters>
+        <counters type="response-size">
+          <counter name="16-31">28</counter>
+          <counter name="32-47">203</counter>
+          <counter name="48-63">16502</counter>
+          <counter name="64-79">13754</counter>
+          <counter name="80-95">19264</counter>
+          <counter name="96-111">13504</counter>
+          <counter name="112-127">8981</counter>
+          <counter name="128-143">14979</counter>
+          <counter name="144-159">7757</counter>
+          <counter name="160-175">9189</counter>
+          <counter name="176-191">7643</counter>
+          <counter name="192-207">6973</counter>
+          <counter name="208-223">2783</counter>
+          <counter name="224-239">5374</counter>
+          <counter name="240-255">2496</counter>
+          <counter name="256-271">1731</counter>
+          <counter name="272-287">462</counter>
+          <counter name="288-303">512</counter>
+          <counter name="304-319">1077</counter>
+          <counter name="320-335">953</counter>
+          <counter name="336-351">11</counter>
+          <counter name="352-367">309</counter>
+          <counter name="368-383">106</counter>
+          <counter name="384-399">80</counter>
+          <counter name="400-415">9</counter>
+          <counter name="432-447">121</counter>
+        </counters>
+      </tcp>
+    </ipv4>
+    <ipv6>
+      <udp>
+        <counters type="request-size"/>
+        <counters type="response-size"/>
+      </udp>
+      <tcp>
+        <counters type="request-size"/>
+        <counters type="response-size"/>
+      </tcp>
+    </ipv6>
+  </traffic>
+  <views/>
+</statistics>

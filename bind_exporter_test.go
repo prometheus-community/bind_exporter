@@ -71,9 +71,14 @@ var (
 		`bind_worker_threads 16`,
 	}
 	trafficStats = []string{
-		`bind_traffic_received_size_bucket{transport="tcpv4",le="+Inf"} 0`,
+		`bind_traffic_received_size_bucket{transport="tcpv4",le="31"} 18600`,
+		`bind_traffic_received_size_bucket{transport="tcpv4",le="47"} 111799`,
+		`bind_traffic_received_size_bucket{transport="tcpv4",le="63"} 134091`,
+		`bind_traffic_received_size_bucket{transport="tcpv4",le="79"} 134798`,
+		`bind_traffic_received_size_bucket{transport="tcpv4",le="95"} 134801`,
+		`bind_traffic_received_size_bucket{transport="tcpv4",le="+Inf"} 134801`,
 		`bind_traffic_received_size_sum{transport="tcpv4"} NaN`,
-		`bind_traffic_received_size_count{transport="tcpv4"} 0`,
+		`bind_traffic_received_size_count{transport="tcpv4"} 134801`,
 		`bind_traffic_received_size_bucket{transport="udpv4",le="31"} 9992`,
 		`bind_traffic_received_size_bucket{transport="udpv4",le="47"} 82206`,
 		`bind_traffic_received_size_bucket{transport="udpv4",le="63"} 108619`,
@@ -144,9 +149,6 @@ var (
 		`bind_traffic_sent_size_bucket{transport="udpv4",le="+Inf"} 97951`,
 		`bind_traffic_sent_size_sum{transport="udpv4"} NaN`,
 		`bind_traffic_sent_size_count{transport="udpv4"} 97951`,
-		`bind_traffic_sent_size_bucket{transport="udpv6",le="+Inf"} 0`,
-		`bind_traffic_sent_size_sum{transport="udpv6"} NaN`,
-		`bind_traffic_sent_size_count{transport="udpv6"} 0`,
 	}
 )
 
@@ -162,9 +164,9 @@ func TestBindExporterJSONClient(t *testing.T) {
 func TestBindExporterV3Client(t *testing.T) {
 	bindExporterTest{
 		server:  newV3Server(),
-		groups:  []bind.StatisticGroup{bind.ServerStats, bind.ViewStats, bind.TaskStats},
+		groups:  []bind.StatisticGroup{bind.ServerStats, bind.ViewStats, bind.TaskStats, bind.TrafficStats},
 		version: "xml.v3",
-		include: combine([]string{`bind_up 1`}, serverStats, viewStats, taskStats),
+		include: combine([]string{`bind_up 1`}, serverStats, viewStats, taskStats, trafficStats),
 	}.run(t)
 }
 
@@ -234,10 +236,11 @@ func collect(c prometheus.Collector) ([]byte, error) {
 
 func newV3Server() *httptest.Server {
 	m := map[string]string{
-		"/xml/v3/server": "fixtures/xml/server.xml",
-		"/xml/v3/status": "fixtures/xml/status.xml",
-		"/xml/v3/tasks":  "fixtures/xml/tasks.xml",
-		"/xml/v3/zones":  "fixtures/xml/zones.xml",
+		"/xml/v3/server":  "fixtures/xml/server.xml",
+		"/xml/v3/status":  "fixtures/xml/status.xml",
+		"/xml/v3/tasks":   "fixtures/xml/tasks.xml",
+		"/xml/v3/traffic": "fixtures/xml/traffic.xml",
+		"/xml/v3/zones":   "fixtures/xml/zones.xml",
 	}
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if f, ok := m[r.RequestURI]; ok {

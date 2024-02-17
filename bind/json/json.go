@@ -78,7 +78,7 @@ type TrafficStatistics struct {
 	Traffic struct {
 		ReceivedUDPv4 map[string]uint64 `json:"dns-udp-requests-sizes-received-ipv4"`
 		SentUDPv4     map[string]uint64 `json:"dns-udp-responses-sizes-sent-ipv4"`
-		ReceivedTCPv4 map[string]uint64 `json:"dns-tcp-requests-sizes-sent-ipv4"`
+		ReceivedTCPv4 map[string]uint64 `json:"dns-tcp-requests-sizes-received-ipv4"`
 		SentTCPv4     map[string]uint64 `json:"dns-tcp-responses-sizes-sent-ipv4"`
 		ReceivedUDPv6 map[string]uint64 `json:"dns-udp-requests-sizes-received-ipv6"`
 		SentUDPv6     map[string]uint64 `json:"dns-udp-responses-sizes-sent-ipv6"`
@@ -216,30 +216,30 @@ func (c *Client) Stats(groups ...bind.StatisticGroup) (bind.Statistics, error) {
 		var err error
 
 		// Make IPv4 traffic histograms.
-		if s.TrafficHistograms.ReceivedUDPv4, err = parseTrafficHist(trafficStats.Traffic.ReceivedUDPv4, bind.TrafficInMaxSize); err != nil {
+		if s.TrafficHistograms.ReceivedUDPv4, err = processTrafficCounters(trafficStats.Traffic.ReceivedUDPv4, bind.TrafficInMaxSize); err != nil {
 			return s, err
 		}
-		if s.TrafficHistograms.SentUDPv4, err = parseTrafficHist(trafficStats.Traffic.SentUDPv4, bind.TrafficOutMaxSize); err != nil {
+		if s.TrafficHistograms.SentUDPv4, err = processTrafficCounters(trafficStats.Traffic.SentUDPv4, bind.TrafficOutMaxSize); err != nil {
 			return s, err
 		}
-		if s.TrafficHistograms.ReceivedTCPv4, err = parseTrafficHist(trafficStats.Traffic.ReceivedTCPv4, bind.TrafficInMaxSize); err != nil {
+		if s.TrafficHistograms.ReceivedTCPv4, err = processTrafficCounters(trafficStats.Traffic.ReceivedTCPv4, bind.TrafficInMaxSize); err != nil {
 			return s, err
 		}
-		if s.TrafficHistograms.SentTCPv4, err = parseTrafficHist(trafficStats.Traffic.SentTCPv4, bind.TrafficOutMaxSize); err != nil {
+		if s.TrafficHistograms.SentTCPv4, err = processTrafficCounters(trafficStats.Traffic.SentTCPv4, bind.TrafficOutMaxSize); err != nil {
 			return s, err
 		}
 
 		// Make IPv6 traffic histograms.
-		if s.TrafficHistograms.ReceivedUDPv6, err = parseTrafficHist(trafficStats.Traffic.ReceivedUDPv6, bind.TrafficInMaxSize); err != nil {
+		if s.TrafficHistograms.ReceivedUDPv6, err = processTrafficCounters(trafficStats.Traffic.ReceivedUDPv6, bind.TrafficInMaxSize); err != nil {
 			return s, err
 		}
-		if s.TrafficHistograms.SentUDPv6, err = parseTrafficHist(trafficStats.Traffic.SentUDPv6, bind.TrafficOutMaxSize); err != nil {
+		if s.TrafficHistograms.SentUDPv6, err = processTrafficCounters(trafficStats.Traffic.SentUDPv6, bind.TrafficOutMaxSize); err != nil {
 			return s, err
 		}
-		if s.TrafficHistograms.ReceivedTCPv6, err = parseTrafficHist(trafficStats.Traffic.ReceivedTCPv6, bind.TrafficInMaxSize); err != nil {
+		if s.TrafficHistograms.ReceivedTCPv6, err = processTrafficCounters(trafficStats.Traffic.ReceivedTCPv6, bind.TrafficInMaxSize); err != nil {
 			return s, err
 		}
-		if s.TrafficHistograms.SentTCPv6, err = parseTrafficHist(trafficStats.Traffic.SentTCPv6, bind.TrafficOutMaxSize); err != nil {
+		if s.TrafficHistograms.SentTCPv6, err = processTrafficCounters(trafficStats.Traffic.SentTCPv6, bind.TrafficOutMaxSize); err != nil {
 			return s, err
 		}
 	}
@@ -247,7 +247,7 @@ func (c *Client) Stats(groups ...bind.StatisticGroup) (bind.Statistics, error) {
 	return s, nil
 }
 
-func parseTrafficHist(traffic map[string]uint64, maxBucket uint) ([]uint64, error) {
+func processTrafficCounters(traffic map[string]uint64, maxBucket uint) ([]uint64, error) {
 	trafficHist := make([]uint64, maxBucket/bind.TrafficBucketSize)
 
 	for k, v := range traffic {
