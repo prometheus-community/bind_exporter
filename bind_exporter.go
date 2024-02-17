@@ -225,7 +225,7 @@ var (
 	)
 	trafficSent = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "traffic", "sent_size"),
-		"Received traffic packet sizes.",
+		"Sent traffic packet sizes.",
 		[]string{"transport"}, nil,
 	)
 )
