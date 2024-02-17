@@ -271,7 +271,7 @@ func processTrafficCounters(traffic map[string]uint64, maxBucket uint) ([]uint64
 		if upperBound < uint64(maxBucket) {
 			// idx is offset, since there is no 0-16 bucket reported by BIND.
 			idx := (upperBound+1)/bind.TrafficBucketSize - 2
-			trafficHist[idx] += v
+			trafficHist[idx] = v
 		} else {
 			// Final slice element aggregates packet sizes from maxBucket to +Inf.
 			trafficHist[len(trafficHist)-1] += v
