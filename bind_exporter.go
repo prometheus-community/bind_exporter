@@ -77,6 +77,11 @@ var (
 		"Number of RRSets in Cache database.",
 		[]string{"view", "type"}, nil,
 	)
+	resolverCacheStats = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, resolver, "cache_stats"),
+		"Number of Cache Stats in Cache database.",
+		[]string{"view", "stat"}, nil,
+	)
 	resolverQueries = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, resolver, "queries_total"),
 		"Number of outgoing DNS queries.",
@@ -321,6 +326,11 @@ func (c *viewCollector) Collect(ch chan<- prometheus.Metric) {
 		for _, s := range v.Cache {
 			ch <- prometheus.MustNewConstMetric(
 				resolverCache, prometheus.GaugeValue, float64(s.Gauge), v.Name, s.Name,
+			)
+		}
+		for _, s := range v.CacheStats {
+			ch <- prometheus.MustNewConstMetric(
+				resolverCacheStats, prometheus.GaugeValue, float64(s.Counter), v.Name, s.Name,
 			)
 		}
 		for _, s := range v.ResolverQueries {
