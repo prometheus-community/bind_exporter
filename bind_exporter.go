@@ -202,6 +202,11 @@ var (
 			"Number of current recursive clients.",
 			nil, nil,
 		),
+		"RPZRewrites": prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "rpz_rewrites"),
+			"Number of response policy zone rewrites.",
+			nil, nil,
+		),
 	}
 	tasksRunning = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "tasks_running"),
