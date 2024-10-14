@@ -15,6 +15,7 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 	"math"
 	"net/http"
 	_ "net/http/pprof"
@@ -25,16 +26,15 @@ import (
 	"time"
 
 	"github.com/alecthomas/kingpin/v2"
-	"github.com/go-kit/log"
-	"github.com/go-kit/log/level"
 	"github.com/prometheus-community/bind_exporter/bind"
 	"github.com/prometheus-community/bind_exporter/bind/json"
 	"github.com/prometheus-community/bind_exporter/bind/xml"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
+	clientVersion "github.com/prometheus/client_golang/prometheus/collectors/version"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/prometheus/common/promlog"
-	"github.com/prometheus/common/promlog/flag"
+	"github.com/prometheus/common/promslog"
+	"github.com/prometheus/common/promslog/flag"
 	"github.com/prometheus/common/version"
 	"github.com/prometheus/exporter-toolkit/web"
 	webflag "github.com/prometheus/exporter-toolkit/web/kingpinflag"
@@ -220,15 +220,15 @@ var (
 	)
 )
 
-type collectorConstructor func(log.Logger, *bind.Statistics) prometheus.Collector
+type collectorConstructor func(*slog.Logger, *bind.Statistics) prometheus.Collector
 
 type serverCollector struct {
-	logger log.Logger
+	logger *slog.Logger
 	stats  *bind.Statistics
 }
 
 // newServerCollector implements collectorConstructor.
-func newServerCollector(logger log.Logger, s *bind.Statistics) prometheus.Collector {
+func newServerCollector(logger *slog.Logger, s *bind.Statistics) prometheus.Collector {
 	return &serverCollector{logger: logger, stats: s}
 }
 
@@ -294,12 +294,12 @@ func (c *serverCollector) Collect(ch chan<- prometheus.Metric) {
 }
 
 type viewCollector struct {
-	logger log.Logger
+	logger *slog.Logger
 	stats  *bind.Statistics
 }
 
 // newViewCollector implements collectorConstructor.
-func newViewCollector(logger log.Logger, s *bind.Statistics) prometheus.Collector {
+func newViewCollector(logger *slog.Logger, s *bind.Statistics) prometheus.Collector {
 	return &viewCollector{logger: logger, stats: s}
 }
 
@@ -345,7 +345,7 @@ func (c *viewCollector) Collect(ch chan<- prometheus.Metric) {
 				resolverQueryDuration, count, math.NaN(), buckets, v.Name,
 			)
 		} else {
-			level.Warn(c.logger).Log("msg", "Error parsing RTT", "err", err)
+			c.logger.Warn("Error parsing RTT", "err", err)
 		}
 	}
 
@@ -361,12 +361,12 @@ func (c *viewCollector) Collect(ch chan<- prometheus.Metric) {
 }
 
 type taskCollector struct {
-	logger log.Logger
+	logger *slog.Logger
 	stats  *bind.Statistics
 }
 
 // newTaskCollector implements collectorConstructor.
-func newTaskCollector(logger log.Logger, s *bind.Statistics) prometheus.Collector {
+func newTaskCollector(logger *slog.Logger, s *bind.Statistics) prometheus.Collector {
 	return &taskCollector{logger: logger, stats: s}
 }
 
@@ -393,11 +393,11 @@ type Exporter struct {
 	client     bind.Client
 	collectors []collectorConstructor
 	groups     []bind.StatisticGroup
-	logger     log.Logger
+	logger     *slog.Logger
 }
 
 // NewExporter returns an initialized Exporter.
-func NewExporter(logger log.Logger, version, url string, timeout time.Duration, g []bind.StatisticGroup) *Exporter {
+func NewExporter(logger *slog.Logger, version, url string, timeout time.Duration, g []bind.StatisticGroup) *Exporter {
 	var c bind.Client
 	switch version {
 	case "xml", "xml.v3":
@@ -440,7 +440,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 		}
 		status = 1
 	} else {
-		level.Error(e.logger).Log("msg", "Couldn't retrieve BIND stats", "err", err)
+		e.logger.Error("Couldn't retrieve BIND stats", "err", err)
 	}
 	ch <- prometheus.MustNewConstMetric(up, prometheus.GaugeValue, status)
 }
@@ -549,19 +549,19 @@ func main() {
 		bind.ServerStats, bind.ViewStats,
 	}).String()).SetValue(&groups)
 
-	promlogConfig := &promlog.Config{}
-	flag.AddFlags(kingpin.CommandLine, promlogConfig)
+	promslogConfig := &promslog.Config{}
+	flag.AddFlags(kingpin.CommandLine, promslogConfig)
 	kingpin.Version(version.Print(exporter))
 	kingpin.HelpFlag.Short('h')
 	kingpin.Parse()
-	logger := promlog.New(promlogConfig)
+	logger := promslog.New(promslogConfig)
 
-	level.Info(logger).Log("msg", "Starting bind_exporter", "version", version.Info())
-	level.Info(logger).Log("msg", "Build context", "build_context", version.BuildContext())
-	level.Info(logger).Log("msg", "Collectors enabled", "collectors", groups.String())
+	logger.Info("Starting bind_exporter", "version", version.Info())
+	logger.Info("Build context", "build_context", version.BuildContext())
+	logger.Info("Collectors enabled", "collectors", groups.String())
 
 	prometheus.MustRegister(
-		version.NewCollector(exporter),
+		clientVersion.NewCollector(exporter),
 		NewExporter(logger, *bindVersion, *bindURI, *bindTimeout, groups),
 	)
 	if *bindPidFile != "" {
@@ -587,7 +587,7 @@ func main() {
 		}
 		landingPage, err := web.NewLandingPage(landingConfig)
 		if err != nil {
-			level.Error(logger).Log("err", err)
+			logger.Error("Error creating landing page", "err", err)
 			os.Exit(1)
 		}
 		http.Handle("/", landingPage)
@@ -595,7 +595,7 @@ func main() {
 
 	srv := &http.Server{}
 	if err := web.ListenAndServe(srv, toolkitFlags, logger); err != nil {
-		level.Error(logger).Log("err", err)
+		logger.Error("Error starting HTTP server", "err", err)
 		os.Exit(1)
 	}
 }
