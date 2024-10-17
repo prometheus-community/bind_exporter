@@ -20,10 +20,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-kit/log"
 	"github.com/prometheus-community/bind_exporter/bind"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/expfmt"
+	"github.com/prometheus/common/promslog"
 )
 
 var (
@@ -110,7 +110,7 @@ type bindExporterTest struct {
 func (b bindExporterTest) run(t *testing.T) {
 	defer b.server.Close()
 
-	o, err := collect(NewExporter(log.NewNopLogger(), b.version, b.server.URL, time.Second, b.groups))
+	o, err := collect(NewExporter(promslog.NewNopLogger(), b.version, b.server.URL, time.Second, b.groups))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -145,7 +145,7 @@ func collect(c prometheus.Collector) ([]byte, error) {
 		return nil, err
 	}
 	var b bytes.Buffer
-	enc := expfmt.NewEncoder(&b, expfmt.FmtText)
+	enc := expfmt.NewEncoder(&b, expfmt.NewFormat(expfmt.TypeTextPlain))
 	for _, f := range m {
 		if err := enc.Encode(f); err != nil {
 			return nil, err
