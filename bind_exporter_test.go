@@ -145,7 +145,7 @@ func collect(c prometheus.Collector) ([]byte, error) {
 		return nil, err
 	}
 	var b bytes.Buffer
-	enc := expfmt.NewEncoder(&b, expfmt.FmtText)
+	enc := expfmt.NewEncoder(&b, expfmt.NewFormat(expfmt.TypeTextPlain))
 	for _, f := range m {
 		if err := enc.Encode(f); err != nil {
 			return nil, err
