@@ -1,3 +1,11 @@
+## 0.8.0 / 2024-11-06
+
+* [CHANGE] Drop XML statistics v2 support #171
+* [CHANGE] Deprecate collection of task stats by default #200
+* [CHANGE] Update logging library #212
+* [ENHANCEMENT] Add metric `rpz_rewrites` #208
+* [BUGFIX] Make log level configurable via command-line flag #182
+
 ## 0.7.0 / 2023-08-11
 
 * [FEATURE] Implement JSON stats v1 parsing #169
