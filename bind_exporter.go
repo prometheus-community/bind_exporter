@@ -203,7 +203,7 @@ var (
 			nil, nil,
 		),
 		"RPZRewrites": prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, "", "rpz_rewrites"),
+			prometheus.BuildFQName(namespace, "", "response_policy_zone_rewrites_total"),
 			"Number of response policy zone rewrites.",
 			nil, nil,
 		),
