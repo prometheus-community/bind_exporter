@@ -47,9 +47,10 @@ type Statistics struct {
 	ZoneStats  Counters  `json:"zonestats"`
 	Views      map[string]struct {
 		Resolver struct {
-			Cache  Gauges   `json:"cache"`
-			Qtypes Counters `json:"qtypes"`
-			Stats  Counters `json:"stats"`
+			Cache      Gauges   `json:"cache"`
+			Qtypes     Counters `json:"qtypes"`
+			Stats      Counters `json:"stats"`
+			CacheStats Counters `json:"cachestats"`
 		} `json:"resolver"`
 	} `json:"views"`
 }
@@ -155,6 +156,9 @@ func (c *Client) Stats(groups ...bind.StatisticGroup) (bind.Statistics, error) {
 			}
 			for k, val := range view.Resolver.Stats {
 				v.ResolverStats = append(v.ResolverStats, bind.Counter{Name: k, Counter: val})
+			}
+			for k, val := range view.Resolver.CacheStats {
+				v.CacheStats = append(v.CacheStats, bind.Counter{Name: k, Counter: val})
 			}
 			s.Views = append(s.Views, v)
 		}
