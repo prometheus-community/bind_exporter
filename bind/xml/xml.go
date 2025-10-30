@@ -34,13 +34,14 @@ const (
 	// ZonesPath is the HTTP path of the v3 zones resource.
 	ZonesPath = "/xml/v3/zones"
 
-	nsstat   = "nsstat"
-	opcode   = "opcode"
-	qtype    = "qtype"
-	resqtype = "resqtype"
-	resstats = "resstats"
-	zonestat = "zonestat"
-	rcode    = "rcode"
+	nsstat     = "nsstat"
+	opcode     = "opcode"
+	qtype      = "qtype"
+	resqtype   = "resqtype"
+	resstats   = "resstats"
+	zonestat   = "zonestat"
+	rcode      = "rcode"
+	cachestats = "cachestats"
 )
 
 type Statistics struct {
@@ -170,6 +171,8 @@ func (c *Client) Stats(groups ...bind.StatisticGroup) (bind.Statistics, error) {
 					v.ResolverQueries = c.Counters
 				case resstats:
 					v.ResolverStats = c.Counters
+				case cachestats:
+					v.CacheStats = c.Counters
 				}
 			}
 			s.Views = append(s.Views, v)
