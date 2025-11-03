@@ -88,7 +88,7 @@ func NewClient(url string, c *http.Client) *Client {
 // Get queries the given path and stores the result in the value pointed to by
 // v. The endpoint must return a valid JSON representation which can be
 // unmarshaled into the provided value.
-func (c *Client) Get(p string, v interface{}) error {
+func (c *Client) Get(p string, v any) error {
 	u, err := url.Parse(c.url)
 	if err != nil {
 		return fmt.Errorf("invalid URL %q: %s", c.url, err)

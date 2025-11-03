@@ -20,6 +20,7 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -504,7 +505,7 @@ func (s *statisticGroups) Set(value string) error {
 		return nil
 	}
 	var sg bind.StatisticGroup
-	for _, dt := range strings.Split(value, ",") {
+	for dt := range strings.SplitSeq(value, ",") {
 		switch dt {
 		case string(bind.ServerStats):
 			sg = bind.ServerStats
@@ -515,10 +516,8 @@ func (s *statisticGroups) Set(value string) error {
 		default:
 			return fmt.Errorf("unknown stats group %q", dt)
 		}
-		for _, existing := range *s {
-			if existing == sg {
-				return fmt.Errorf("duplicated stats group %q", sg)
-			}
+		if slices.Contains(*s, sg) {
+			return fmt.Errorf("duplicated stats group %q", sg)
 		}
 		*s = append(*s, sg)
 	}
