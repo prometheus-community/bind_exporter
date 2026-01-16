@@ -63,6 +63,7 @@ type View struct {
 	Cache           []Gauge
 	ResolverStats   []Counter
 	ResolverQueries []Counter
+	CacheStats      []Counter
 }
 
 // View represents statistics for a single BIND zone view.

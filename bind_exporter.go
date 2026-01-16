@@ -82,6 +82,11 @@ var (
 		"Number of outgoing DNS queries.",
 		[]string{"view", "type"}, nil,
 	)
+	cacheStats = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, resolver, "cache_stats"),
+		"Resolver cache statistics.",
+		[]string{"view", "type"}, nil,
+	)
 	resolverQueryDuration = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, resolver, "query_duration_seconds"),
 		"Resolver query round-trip time in seconds.",
@@ -331,6 +336,11 @@ func (c *viewCollector) Collect(ch chan<- prometheus.Metric) {
 		for _, s := range v.ResolverQueries {
 			ch <- prometheus.MustNewConstMetric(
 				resolverQueries, prometheus.CounterValue, float64(s.Counter), v.Name, s.Name,
+			)
+		}
+		for _, s := range v.CacheStats {
+			ch <- prometheus.MustNewConstMetric(
+				cacheStats, prometheus.CounterValue, float64(s.Counter), v.Name, s.Name,
 			)
 		}
 		for _, s := range v.ResolverStats {
