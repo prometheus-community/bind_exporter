@@ -208,6 +208,12 @@ var (
 			nil, nil,
 		),
 	}
+	// serverMetricGauges lists the serverMetricStats entries that report a
+	// current value rather than a running total. BIND reports them in the same
+	// statistics counters as the totals, so they have to be typed explicitly.
+	serverMetricGauges = map[string]struct{}{
+		"RecursClients": {},
+	}
 	tasksRunning = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "tasks_running"),
 		"Number of running tasks.",
@@ -280,7 +286,7 @@ func (c *serverCollector) Collect(ch chan<- prometheus.Metric) {
 		}
 		if desc, ok := serverMetricStats[s.Name]; ok {
 			ch <- prometheus.MustNewConstMetric(
-				desc, prometheus.CounterValue, float64(s.Counter),
+				desc, serverMetricValueType(s.Name), float64(s.Counter),
 			)
 		}
 	}
@@ -292,10 +298,19 @@ func (c *serverCollector) Collect(ch chan<- prometheus.Metric) {
 	for _, s := range c.stats.Server.ZoneStatistics {
 		if desc, ok := serverMetricStats[s.Name]; ok {
 			ch <- prometheus.MustNewConstMetric(
-				desc, prometheus.CounterValue, float64(s.Counter),
+				desc, serverMetricValueType(s.Name), float64(s.Counter),
 			)
 		}
 	}
+}
+
+// serverMetricValueType reports the value type to use for a serverMetricStats
+// entry.
+func serverMetricValueType(name string) prometheus.ValueType {
+	if _, ok := serverMetricGauges[name]; ok {
+		return prometheus.GaugeValue
+	}
+	return prometheus.CounterValue
 }
 
 type viewCollector struct {
