@@ -56,6 +56,7 @@ type ZoneStatistics struct {
 type Server struct {
 	BootTime   time.Time  `xml:"boot-time"`
 	ConfigTime time.Time  `xml:"config-time"`
+	Version    string     `xml:"version"`
 	Counters   []Counters `xml:"counters"`
 }
 
@@ -144,6 +145,7 @@ func (c *Client) Stats(groups ...bind.StatisticGroup) (bind.Statistics, error) {
 
 		s.Server.BootTime = stats.Server.BootTime
 		s.Server.ConfigTime = stats.Server.ConfigTime
+		s.Server.Version = stats.Server.Version
 		for _, c := range stats.Server.Counters {
 			switch c.Type {
 			case opcode:
@@ -202,6 +204,9 @@ func (c *Client) Stats(groups ...bind.StatisticGroup) (bind.Statistics, error) {
 			return s, err
 		}
 		s.TaskManager = stats.Taskmgr
+		if s.Server.Version == "" {
+			s.Server.Version = stats.Server.Version
+		}
 	}
 
 	return s, nil
