@@ -61,6 +61,7 @@ type Server struct {
 type View struct {
 	Name            string
 	Cache           []Gauge
+	CacheStats      []Counter
 	ResolverStats   []Counter
 	ResolverQueries []Counter
 }
