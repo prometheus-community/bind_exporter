@@ -26,6 +26,18 @@ type Client interface {
 const (
 	// QryRTT is the common prefix of query round-trip histogram counters.
 	QryRTT = "QryRTT"
+
+	// trafficBucketSize is the size of one traffic histogram bucket, defined as
+	// DNS_SIZEHISTO_QUANTUM in BIND source code.
+	TrafficBucketSize = 16
+
+	// trafficInMaxSize is the maximum size inbound request reported by BIND, referred to by
+	// DNS_SIZEHISTO_MAXIN in BIND source code.
+	TrafficInMaxSize = 288
+
+	// trafficOutMaxSize is the maximum size outbound response reported by BIND, referred to by
+	// DNS_SIZEHISTO_MAXOUT in BIND source code.
+	TrafficOutMaxSize = 4096
 )
 
 // StatisticGroup describes a sub-group of BIND statistics.
@@ -33,17 +45,19 @@ type StatisticGroup string
 
 // Available statistic groups.
 const (
-	ServerStats StatisticGroup = "server"
-	ViewStats   StatisticGroup = "view"
-	TaskStats   StatisticGroup = "tasks"
+	ServerStats  StatisticGroup = "server"
+	TaskStats    StatisticGroup = "tasks"
+	TrafficStats StatisticGroup = "traffic"
+	ViewStats    StatisticGroup = "view"
 )
 
 // Statistics is a generic representation of BIND statistics.
 type Statistics struct {
-	Server      Server
-	Views       []View
-	ZoneViews   []ZoneView
-	TaskManager TaskManager
+	Server            Server
+	Views             []View
+	ZoneViews         []ZoneView
+	TaskManager       TaskManager
+	TrafficHistograms TrafficHistograms
 }
 
 // Server represents BIND server statistics.
@@ -110,4 +124,17 @@ type ThreadModel struct {
 	WorkerThreads  uint64 `xml:"worker-threads"`
 	DefaultQuantum uint64 `xml:"default-quantum"`
 	TasksRunning   uint64 `xml:"tasks-running"`
+}
+
+// TrafficHistograms contains slices representing sent / received traffic, with each slice element
+// corresponding to a `TrafficBucketSize` range. The last slice element represents the +Inf bucket.
+type TrafficHistograms struct {
+	ReceivedUDPv4 []uint64
+	SentUDPv4     []uint64
+	ReceivedTCPv4 []uint64
+	SentTCPv4     []uint64
+	ReceivedUDPv6 []uint64
+	SentUDPv6     []uint64
+	ReceivedTCPv6 []uint64
+	SentTCPv6     []uint64
 }
