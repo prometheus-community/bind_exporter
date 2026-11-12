@@ -40,6 +40,7 @@ type Counters map[string]uint64
 type Statistics struct {
 	BootTime   time.Time `json:"boot-time"`
 	ConfigTime time.Time `json:"config-time"`
+	Version    string    `json:"version"`
 	Opcodes    Counters  `json:"opcodes"`
 	QTypes     Counters  `json:"qtypes"`
 	NSStats    Counters  `json:"nsstats"`
@@ -55,7 +56,8 @@ type Statistics struct {
 }
 
 type ZoneStatistics struct {
-	Views map[string]struct {
+	Version string `json:"version"`
+	Views   map[string]struct {
 		Zones []struct {
 			Name   string `json:"name"`
 			Class  string `json:"class"`
@@ -65,6 +67,7 @@ type ZoneStatistics struct {
 }
 
 type TaskStatistics struct {
+	Version string `json:"version"`
 	TaskMgr struct {
 		TasksRunning  uint64 `json:"tasks-running"`
 		WorkerThreads uint64 `json:"worker-threads"`
@@ -128,6 +131,7 @@ func (c *Client) Stats(groups ...bind.StatisticGroup) (bind.Statistics, error) {
 
 		s.Server.BootTime = stats.BootTime
 		s.Server.ConfigTime = stats.ConfigTime
+		s.Server.Version = stats.Version
 
 		for k, val := range stats.Opcodes {
 			s.Server.IncomingRequests = append(s.Server.IncomingRequests, bind.Counter{Name: k, Counter: val})
@@ -164,6 +168,9 @@ func (c *Client) Stats(groups ...bind.StatisticGroup) (bind.Statistics, error) {
 	if err := c.Get(ZonesPath, &zonestats); err != nil {
 		return s, err
 	}
+	if s.Server.Version == "" {
+		s.Server.Version = zonestats.Version
+	}
 
 	for name, view := range zonestats.Views {
 		v := bind.ZoneView{
@@ -189,6 +196,9 @@ func (c *Client) Stats(groups ...bind.StatisticGroup) (bind.Statistics, error) {
 		}
 		s.TaskManager.ThreadModel.TasksRunning = taskstats.TaskMgr.TasksRunning
 		s.TaskManager.ThreadModel.WorkerThreads = taskstats.TaskMgr.WorkerThreads
+		if s.Server.Version == "" {
+			s.Server.Version = taskstats.Version
+		}
 	}
 
 	return s, nil

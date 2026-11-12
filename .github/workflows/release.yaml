@@ -1,0 +1,86 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify VERSION and CHANGELOG match tag
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          FILE_VERSION="$(tr -d '[:space:]' < VERSION)"
+
+          if [ "$FILE_VERSION" != "$TAG_VERSION" ]; then
+            echo "::error file=VERSION::VERSION is '$FILE_VERSION' but tag is '$GITHUB_REF_NAME'"
+            exit 1
+          fi
+
+          # The newest (top) CHANGELOG entry must be the release being tagged
+          FIRST="$(grep -m1 '^## ' CHANGELOG.md || true)"
+          case "$FIRST" in
+            "## ${TAG_VERSION} /"*) ;;
+            *)
+              echo "::error file=CHANGELOG.md::Top entry is '${FIRST}', expected '## ${TAG_VERSION} / <date>'"
+              exit 1
+              ;;
+          esac
+
+      - name: Extract release notes and title from CHANGELOG
+        run: |
+          # Body of the top entry: lines after the first "## " heading, up to the next one
+          awk '/^## /{n++; next} n==1' CHANGELOG.md \
+            | sed -e :a -e '/^\n*$/{$d;N;ba' -e '}' \
+            | sed '/./,$!d' > "$RUNNER_TEMP/release-notes.md"
+
+          if [ ! -s "$RUNNER_TEMP/release-notes.md" ]; then
+            echo "::error file=CHANGELOG.md::Top entry has no content"
+            exit 1
+          fi
+
+          # Release title = top heading without the leading "## " (e.g. "0.8.1 / 2026-09-29")
+          echo "RELEASE_TITLE=$(grep -m1 '^## ' CHANGELOG.md | sed 's/^## //')" >> "$GITHUB_ENV"
+
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Build linux/amd64
+        env:
+          CGO_ENABLED: "0"
+          GOOS: linux
+          GOARCH: amd64
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          NAME="bind_exporter-${VERSION}.linux-amd64"
+          P=github.com/prometheus/common/version
+          mkdir -p "dist/$NAME"
+          go build -trimpath -ldflags "\
+            -X $P.Version=${VERSION} \
+            -X $P.Revision=${GITHUB_SHA} \
+            -X $P.Branch=HEAD \
+            -X $P.BuildUser=github-actions \
+            -X $P.BuildDate=$(date -u +%Y%m%d-%H:%M:%S)" \
+            -o "dist/$NAME/bind_exporter" .
+          cp LICENSE NOTICE "dist/$NAME/"
+          tar -C dist -czf "dist/$NAME.tar.gz" "$NAME"
+          rm -rf "dist/$NAME"
+          (cd dist && sha256sum "$NAME.tar.gz" > sha256sums.txt)
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "$RELEASE_TITLE" \
+            --notes-file "$RUNNER_TEMP/release-notes.md"
