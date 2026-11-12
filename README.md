@@ -9,11 +9,13 @@ Export BIND (named/dns) v9+ service metrics to Prometheus.
 
 ### Build and run from source
 ```bash
-go get github.com/prometheus-community/bind_exporter
-cd $GOPATH/src/github.com/prometheus-community/bind_exporter
-make
+git clone https://github.com/prometheus-community/bind_exporter.git
+cd bind_exporter
+make build
 ./bind_exporter [flags]
 ```
+
+Pre-built binaries are available on the [releases page](https://github.com/prometheus-community/bind_exporter/releases).
 
 ### Run in Docker container
 
@@ -33,6 +35,24 @@ Run `bind_exporter` in a Docker container and communicate with `named` on non-de
 docker run -d prometheuscommunity/bind-exporter:v0.3.0 --bind.stats-url http://<IP/hostname>:8053
 ```
 
+### Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--bind.stats-url` | `http://localhost:8053/` | Address of the BIND statistics channel. |
+| `--bind.stats-version` | `json` | Statistics channel API to use: `json`, or `xml` (`xml.v3` is an alias). `auto` is accepted and currently uses the JSON API. |
+| `--bind.stats-groups` | `server,view` | Comma-separated list of statistics groups to collect: `server`, `view`, `tasks`. |
+| `--bind.timeout` | `10s` | Timeout for requests to the statistics channel. |
+| `--bind.pid-file` | `/run/named/named.pid` | Path to BIND's pid file, used to export `process_*` metrics for `named`. |
+| `--web.listen-address` | `:9119` | Address to expose metrics on. Repeatable. |
+| `--web.telemetry-path` | `/metrics` | Path under which to expose metrics. |
+| `--web.config.file` | | Path to a TLS/basic auth configuration file (see below). |
+| `--web.systemd-socket` | `false` | Use systemd socket activation listeners instead of port listeners (Linux only). |
+| `--log.level` | `info` | One of `debug`, `info`, `warn`, `error`. |
+| `--log.format` | `logfmt` | One of `logfmt`, `json`. |
+
+Run `./bind_exporter --help` for the full list.
+
 ## TLS and basic authentication
 
 The Bind Exporter supports TLS and basic authentication.
@@ -47,8 +67,9 @@ using the `--web.config.file` parameter. The format of the file is described
 
 ## Troubleshooting
 
-Make sure BIND was built with libxml2 support. You can check with the following
-command: `named -V | grep libxml2`.
+The default `--bind.stats-version=json` needs BIND built with json-c support;
+`--bind.stats-version=xml` needs libxml2 support. You can check with the
+following command: `named -V | grep -E 'json-c|libxml2'`.
 
 Configure BIND to open a statistics channel. It's recommended to run the
 bind\_exporter next to BIND, so it's only necessary to open a port locally.
