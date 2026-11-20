@@ -171,42 +171,63 @@ var (
 		"Number of responses sent per RCODE.",
 		[]string{"rcode"}, nil,
 	)
-	serverMetricStats = map[string]*prometheus.Desc{
-		"QryDuplicate": prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, "", "query_duplicates_total"),
-			"Number of duplicated queries received.",
-			nil, nil,
-		),
-		"QryRecursion": prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, "", "query_recursions_total"),
-			"Number of queries causing recursion.",
-			nil, nil,
-		),
-		"XfrRej": prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, "", "zone_transfer_rejected_total"),
-			"Number of rejected zone transfers.",
-			nil, nil,
-		),
-		"XfrSuccess": prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, "", "zone_transfer_success_total"),
-			"Number of successful zone transfers.",
-			nil, nil,
-		),
-		"XfrFail": prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, "", "zone_transfer_failure_total"),
-			"Number of failed zone transfers.",
-			nil, nil,
-		),
-		"RecursClients": prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, "", "recursive_clients"),
-			"Number of current recursive clients.",
-			nil, nil,
-		),
-		"RPZRewrites": prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, "", "response_policy_zone_rewrites_total"),
-			"Number of response policy zone rewrites.",
-			nil, nil,
-		),
+	serverMetricStats = map[string]typedDesc{
+		"QryDuplicate": {
+			desc: prometheus.NewDesc(
+				prometheus.BuildFQName(namespace, "", "query_duplicates_total"),
+				"Number of duplicated queries received.",
+				nil, nil,
+			),
+			valueType: prometheus.CounterValue,
+		},
+		"QryRecursion": {
+			desc: prometheus.NewDesc(
+				prometheus.BuildFQName(namespace, "", "query_recursions_total"),
+				"Number of queries causing recursion.",
+				nil, nil,
+			),
+			valueType: prometheus.CounterValue,
+		},
+		"XfrRej": {
+			desc: prometheus.NewDesc(
+				prometheus.BuildFQName(namespace, "", "zone_transfer_rejected_total"),
+				"Number of rejected zone transfers.",
+				nil, nil,
+			),
+			valueType: prometheus.CounterValue,
+		},
+		"XfrSuccess": {
+			desc: prometheus.NewDesc(
+				prometheus.BuildFQName(namespace, "", "zone_transfer_success_total"),
+				"Number of successful zone transfers.",
+				nil, nil,
+			),
+			valueType: prometheus.CounterValue,
+		},
+		"XfrFail": {
+			desc: prometheus.NewDesc(
+				prometheus.BuildFQName(namespace, "", "zone_transfer_failure_total"),
+				"Number of failed zone transfers.",
+				nil, nil,
+			),
+			valueType: prometheus.CounterValue,
+		},
+		"RecursClients": {
+			desc: prometheus.NewDesc(
+				prometheus.BuildFQName(namespace, "", "recursive_clients"),
+				"Number of current recursive clients.",
+				nil, nil,
+			),
+			valueType: prometheus.GaugeValue,
+		},
+		"RPZRewrites": {
+			desc: prometheus.NewDesc(
+				prometheus.BuildFQName(namespace, "", "response_policy_zone_rewrites_total"),
+				"Number of response policy zone rewrites.",
+				nil, nil,
+			),
+			valueType: prometheus.CounterValue,
+		},
 	}
 	tasksRunning = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "tasks_running"),
@@ -224,6 +245,12 @@ var (
 		[]string{"view", "zone_name"}, nil,
 	)
 )
+
+// typedDesc pairs a metric description with the value type it is exported as.
+type typedDesc struct {
+	desc      *prometheus.Desc
+	valueType prometheus.ValueType
+}
 
 type collectorConstructor func(*slog.Logger, *bind.Statistics) prometheus.Collector
 
@@ -246,8 +273,8 @@ func (c *serverCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- serverQueryErrors
 	ch <- serverResponses
 	ch <- serverRcodes
-	for _, desc := range serverMetricStats {
-		ch <- desc
+	for _, m := range serverMetricStats {
+		ch <- m.desc
 	}
 }
 
@@ -278,9 +305,9 @@ func (c *serverCollector) Collect(ch chan<- prometheus.Metric) {
 				desc, prometheus.CounterValue, float64(s.Counter), r,
 			)
 		}
-		if desc, ok := serverMetricStats[s.Name]; ok {
+		if m, ok := serverMetricStats[s.Name]; ok {
 			ch <- prometheus.MustNewConstMetric(
-				desc, prometheus.CounterValue, float64(s.Counter),
+				m.desc, m.valueType, float64(s.Counter),
 			)
 		}
 	}
@@ -290,9 +317,9 @@ func (c *serverCollector) Collect(ch chan<- prometheus.Metric) {
 		)
 	}
 	for _, s := range c.stats.Server.ZoneStatistics {
-		if desc, ok := serverMetricStats[s.Name]; ok {
+		if m, ok := serverMetricStats[s.Name]; ok {
 			ch <- prometheus.MustNewConstMetric(
-				desc, prometheus.CounterValue, float64(s.Counter),
+				m.desc, m.valueType, float64(s.Counter),
 			)
 		}
 	}

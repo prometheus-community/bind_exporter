@@ -40,6 +40,8 @@ var (
 		`bind_zone_transfer_success_total 25`,
 		`bind_zone_transfer_failure_total 1`,
 		`bind_recursive_clients 76`,
+		// Current recursive clients is a gauge, not a counter.
+		`# TYPE bind_recursive_clients gauge`,
 		`bind_config_time_seconds 1.626325868e+09`,
 		`bind_response_rcodes_total{rcode="NOERROR"} 989812`,
 		`bind_response_rcodes_total{rcode="NXDOMAIN"} 33958`,
