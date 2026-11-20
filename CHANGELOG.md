@@ -1,3 +1,7 @@
+## 0.8.1 / 2026-09-29
+
+* [ENHANCEMENT] Expose BIND version as bind_version_info metric
+
 ## 0.8.0 / 2024-11-06
 
 * [CHANGE] Drop XML statistics v2 support #171

@@ -50,6 +50,7 @@ type Statistics struct {
 type Server struct {
 	BootTime         time.Time
 	ConfigTime       time.Time
+	Version          string
 	IncomingQueries  []Counter
 	IncomingRequests []Counter
 	NameServerStats  []Counter

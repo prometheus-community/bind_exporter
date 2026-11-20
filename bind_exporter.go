@@ -52,6 +52,11 @@ var (
 		"Was the Bind instance query successful?",
 		nil, nil,
 	)
+	versionInfo = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "version_info"),
+		"BIND version promoted as a label with constant value 1.",
+		[]string{"version"}, nil,
+	)
 	bootTime = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "boot_time_seconds"),
 		"Start time of the BIND process since unix epoch in seconds.",
@@ -430,6 +435,7 @@ func NewExporter(logger *slog.Logger, version, url string, timeout time.Duration
 // implements prometheus.Collector.
 func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- up
+	ch <- versionInfo
 	for _, c := range e.collectors {
 		c(e.logger, &bind.Statistics{}).Describe(ch)
 	}
@@ -444,6 +450,11 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 			c(e.logger, &stats).Collect(ch)
 		}
 		status = 1
+		if stats.Server.Version != "" {
+			ch <- prometheus.MustNewConstMetric(
+				versionInfo, prometheus.GaugeValue, 1, stats.Server.Version,
+			)
+		}
 	} else {
 		e.logger.Error("Couldn't retrieve BIND stats", "err", err)
 	}

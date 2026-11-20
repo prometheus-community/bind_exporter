@@ -77,7 +77,7 @@ func TestBindExporterJSONClient(t *testing.T) {
 		server:  newJSONServer(),
 		groups:  []bind.StatisticGroup{bind.ServerStats, bind.ViewStats, bind.TaskStats},
 		version: "json",
-		include: combine([]string{`bind_up 1`}, serverStats, viewStats, taskStats),
+		include: combine([]string{`bind_up 1`, `bind_version_info{version="9.18.12-1-Debian"} 1`}, serverStats, viewStats, taskStats),
 	}.run(t)
 }
 
@@ -86,7 +86,39 @@ func TestBindExporterV3Client(t *testing.T) {
 		server:  newV3Server(),
 		groups:  []bind.StatisticGroup{bind.ServerStats, bind.ViewStats, bind.TaskStats},
 		version: "xml.v3",
-		include: combine([]string{`bind_up 1`}, serverStats, viewStats, taskStats),
+		include: combine([]string{`bind_up 1`, `bind_version_info{version="9.11.31"} 1`}, serverStats, viewStats, taskStats),
+	}.run(t)
+}
+
+func TestBindExporterJSONClientVersionFromZones(t *testing.T) {
+	// The zones endpoint is always queried by the JSON client and provides
+	// the server version even when server/view/task statistics are disabled.
+	bindExporterTest{
+		server:  newJSONServer(),
+		groups:  []bind.StatisticGroup{},
+		version: "json",
+		include: []string{
+			`bind_up 1`,
+			`bind_version_info{version="9.18.12-1-Debian"} 1`,
+		},
+		exclude: append(append([]string{}, serverStats...), taskStats...),
+	}.run(t)
+}
+
+func TestBindExporterV3ClientVersionFromTasks(t *testing.T) {
+	// The XML zones endpoint does not provide the version, so with only
+	// task statistics enabled the version must come from the tasks endpoint.
+	bindExporterTest{
+		server:  newV3Server(),
+		groups:  []bind.StatisticGroup{bind.TaskStats},
+		version: "xml.v3",
+		include: []string{
+			`bind_up 1`,
+			`bind_version_info{version="9.11.31"} 1`,
+			`bind_tasks_running 8`,
+			`bind_worker_threads 16`,
+		},
+		exclude: serverStats,
 	}.run(t)
 }
 
@@ -95,7 +127,7 @@ func TestBindExporterBindFailure(t *testing.T) {
 		server:  httptest.NewServer(http.HandlerFunc(http.NotFound)),
 		version: "xml.v3",
 		include: []string{`bind_up 0`},
-		exclude: serverStats,
+		exclude: append(append([]string{}, serverStats...), `bind_version_info`),
 	}.run(t)
 }
 
