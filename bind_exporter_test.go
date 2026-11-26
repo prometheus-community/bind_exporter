@@ -17,6 +17,7 @@ import (
 	"bytes"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"testing"
 	"time"
 
@@ -90,9 +91,54 @@ func TestBindExporterV3Client(t *testing.T) {
 	}.run(t)
 }
 
+// The zones resource only feeds the zone serials of the view group. When that
+// group is not collected the resource must not be queried, so a BIND that
+// fails to serve it does not take the other groups down.
+func TestBindExporterZonesOnlyWithViewGroup(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		version string
+		server  func(unavailable ...string) *httptest.Server
+		zones   string
+	}{
+		{name: "json", version: "json", server: newJSONServer, zones: "/json/v1/zones"},
+		{name: "xml.v3", version: "xml.v3", server: newV3Server, zones: "/xml/v3/zones"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Run("server group", func(t *testing.T) {
+				bindExporterTest{
+					server:  tc.server(tc.zones),
+					groups:  []bind.StatisticGroup{bind.ServerStats},
+					version: tc.version,
+					include: combine([]string{`bind_up 1`}, serverStats),
+					exclude: []string{`bind_zone_serial`},
+				}.run(t)
+			})
+			t.Run("tasks group", func(t *testing.T) {
+				bindExporterTest{
+					server:  tc.server(tc.zones),
+					groups:  []bind.StatisticGroup{bind.TaskStats},
+					version: tc.version,
+					include: combine([]string{`bind_up 1`}, taskStats),
+				}.run(t)
+			})
+			t.Run("view group", func(t *testing.T) {
+				bindExporterTest{
+					server:  tc.server(tc.zones),
+					groups:  []bind.StatisticGroup{bind.ViewStats},
+					version: tc.version,
+					include: []string{`bind_up 0`},
+					exclude: []string{`bind_zone_serial`},
+				}.run(t)
+			})
+		})
+	}
+}
+
 func TestBindExporterBindFailure(t *testing.T) {
 	bindExporterTest{
 		server:  httptest.NewServer(http.HandlerFunc(http.NotFound)),
+		groups:  []bind.StatisticGroup{bind.ServerStats, bind.ViewStats},
 		version: "xml.v3",
 		include: []string{`bind_up 0`},
 		exclude: serverStats,
@@ -154,7 +200,9 @@ func collect(c prometheus.Collector) ([]byte, error) {
 	return b.Bytes(), nil
 }
 
-func newV3Server() *httptest.Server {
+// newV3Server serves the XML fixtures. Paths listed as unavailable answer with
+// an internal server error instead.
+func newV3Server(unavailable ...string) *httptest.Server {
 	m := map[string]string{
 		"/xml/v3/server": "fixtures/xml/server.xml",
 		"/xml/v3/status": "fixtures/xml/status.xml",
@@ -162,7 +210,9 @@ func newV3Server() *httptest.Server {
 		"/xml/v3/zones":  "fixtures/xml/zones.xml",
 	}
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if f, ok := m[r.RequestURI]; ok {
+		if slices.Contains(unavailable, r.RequestURI) {
+			http.Error(w, "unavailable", http.StatusInternalServerError)
+		} else if f, ok := m[r.RequestURI]; ok {
 			http.ServeFile(w, r, f)
 		} else {
 			http.NotFound(w, r)
@@ -170,14 +220,18 @@ func newV3Server() *httptest.Server {
 	}))
 }
 
-func newJSONServer() *httptest.Server {
+// newJSONServer serves the JSON fixtures. Paths listed as unavailable answer
+// with an internal server error instead.
+func newJSONServer(unavailable ...string) *httptest.Server {
 	m := map[string]string{
 		"/json/v1/server": "fixtures/json/server.json",
 		"/json/v1/tasks":  "fixtures/json/tasks.json",
 		"/json/v1/zones":  "fixtures/json/zones.json",
 	}
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if f, ok := m[r.RequestURI]; ok {
+		if slices.Contains(unavailable, r.RequestURI) {
+			http.Error(w, "unavailable", http.StatusInternalServerError)
+		} else if f, ok := m[r.RequestURI]; ok {
 			http.ServeFile(w, r, f)
 		} else {
 			http.NotFound(w, r)
