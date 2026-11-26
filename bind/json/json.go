@@ -160,26 +160,30 @@ func (c *Client) Stats(groups ...bind.StatisticGroup) (bind.Statistics, error) {
 		}
 	}
 
-	var zonestats ZoneStatistics
-	if err := c.Get(ZonesPath, &zonestats); err != nil {
-		return s, err
-	}
+	// Zone serials are only exported by the view collector, so the zones
+	// resource is not worth querying (or failing on) without the view group.
+	if m[bind.ViewStats] {
+		var zonestats ZoneStatistics
+		if err := c.Get(ZonesPath, &zonestats); err != nil {
+			return s, err
+		}
 
-	for name, view := range zonestats.Views {
-		v := bind.ZoneView{
-			Name: name,
-		}
-		for _, zone := range view.Zones {
-			if zone.Class != "IN" {
-				continue
+		for name, view := range zonestats.Views {
+			v := bind.ZoneView{
+				Name: name,
 			}
-			z := bind.ZoneCounter{
-				Name:   zone.Name,
-				Serial: strconv.FormatUint(uint64(zone.Serial), 10),
+			for _, zone := range view.Zones {
+				if zone.Class != "IN" {
+					continue
+				}
+				z := bind.ZoneCounter{
+					Name:   zone.Name,
+					Serial: strconv.FormatUint(uint64(zone.Serial), 10),
+				}
+				v.ZoneData = append(v.ZoneData, z)
 			}
-			v.ZoneData = append(v.ZoneData, z)
+			s.ZoneViews = append(s.ZoneViews, v)
 		}
-		s.ZoneViews = append(s.ZoneViews, v)
 	}
 
 	if m[bind.TaskStats] {
